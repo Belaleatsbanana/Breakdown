@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 from livekit import agents  # type: ignore[import-untyped]
 from livekit.agents import Agent, AgentSession, RoomInputOptions  # type: ignore[import-untyped]
 from loguru import logger
 
-from breakdown.config import Settings
-from breakdown.indexer.store import VectorStore
+from breakdown.config import Settings, get_settings
+from breakdown.indexer.store import VectorStore, create_store
 from breakdown.providers.llm import create_llm
 from breakdown.providers.stt import create_stt
 from breakdown.providers.tts import create_tts
@@ -60,86 +61,72 @@ async def _index_context(
     return context, window
 
 
-def create_agent(
-    settings: Settings,
-    store: VectorStore,
-    breakdown_dir: Path,
-) -> object:
-    async def entrypoint(ctx: agents.JobContext) -> None:
-        workspace_root = breakdown_dir.parent
-        session = Session.load(breakdown_dir / "session.json") or Session(
-            workspace_root=workspace_root
-        )
-        session_path = breakdown_dir / "session.json"
+# Module-level function so livekit-agents can pickle it for worker subprocesses.
+async def entrypoint(ctx: agents.JobContext) -> None:
+    settings = get_settings()
+    breakdown_dir = Path(os.environ.get("BREAKDOWN_DIR", ".breakdown"))
+    workspace_root = breakdown_dir.parent
+    store = create_store(settings.index_backend, breakdown_dir / "index")
 
-        llm = create_llm(settings)
-        tts = create_tts(settings)
-        stt = create_stt(settings)
+    session = Session.load(breakdown_dir / "session.json") or Session(
+        workspace_root=workspace_root
+    )
+    session_path = breakdown_dir / "session.json"
 
-        agent_session = AgentSession(llm=llm, tts=tts, stt=stt)  # type: ignore[arg-type]
+    llm = create_llm(settings)
+    tts = create_tts(settings)
+    stt = create_stt(settings)
+    agent_session = AgentSession(llm=llm, tts=tts, stt=stt)  # type: ignore[arg-type]
 
-        async def on_data(packet: object) -> None:
-            try:
-                msg: dict[str, object] = json.loads(getattr(packet, "data", b"{}"))
-            except Exception:
-                return
+    async def on_data(packet: object) -> None:
+        try:
+            msg: dict[str, object] = json.loads(getattr(packet, "data", b"{}"))
+        except Exception:
+            return
 
-            msg_type: str = str(msg.get("type", ""))
+        msg_type: str = str(msg.get("type", ""))
 
-            if msg_type == "explain":
-                session.current_file = str(msg.get("file", ""))
-                session.current_line = int(msg.get("line", 1))  # type: ignore[arg-type]
-                context, window = await _index_context(
-                    store,
-                    session.current_file,
-                    session.current_line,
-                    workspace_root,
-                    settings,
-                )
-                system = _build_system_prompt(session, context, window)
-                session.add_turn("system", system)
-                budget = int(settings.llm_context_window * settings.history_budget_pct)
-                session.trim_to_budget(budget)
-                mid = settings.context_window_lines // 2
-                window_lines = window.split("\n")
-                target_line = window_lines[mid] if window and mid < len(window_lines) else ""
-                await agent_session.say(  # type: ignore[attr-defined]
-                    f"Line {session.current_line}: {target_line}",
-                    allow_interruptions=True,
-                )
-                session.add_turn("user", f"Explain line {session.current_line}: {target_line}")
-                session.save(session_path)
+        if msg_type == "explain":
+            session.current_file = str(msg.get("file", ""))
+            session.current_line = int(msg.get("line", 1))  # type: ignore[arg-type]
+            context, window = await _index_context(
+                store, session.current_file, session.current_line, workspace_root, settings,
+            )
+            system = _build_system_prompt(session, context, window)
+            session.add_turn("system", system)
+            budget = int(settings.llm_context_window * settings.history_budget_pct)
+            session.trim_to_budget(budget)
+            mid = settings.context_window_lines // 2
+            window_lines = window.split("\n")
+            target_line = window_lines[mid] if window and mid < len(window_lines) else ""
+            await agent_session.say(  # type: ignore[attr-defined]
+                f"Line {session.current_line}: {target_line}", allow_interruptions=True,
+            )
+            session.add_turn("user", f"Explain line {session.current_line}: {target_line}")
+            session.save(session_path)
 
-            elif msg_type == "next":
-                session.current_line += 1
-                payload = json.dumps({
-                    "v": 1,
-                    "type": "position",
-                    "file": session.current_file,
-                    "line": session.current_line,
-                }).encode()
-                await ctx.room.local_participant.publish_data(payload)  # type: ignore[attr-defined]
-                session.save(session_path)
+        elif msg_type == "next":
+            session.current_line += 1
+            payload = json.dumps(
+                {"v": 1, "type": "position", "file": session.current_file, "line": session.current_line}
+            ).encode()
+            await ctx.room.local_participant.publish_data(payload)  # type: ignore[attr-defined]
+            session.save(session_path)
 
-            elif msg_type == "prev":
-                session.current_line = max(1, session.current_line - 1)
-                payload = json.dumps({
-                    "v": 1,
-                    "type": "position",
-                    "file": session.current_file,
-                    "line": session.current_line,
-                }).encode()
-                await ctx.room.local_participant.publish_data(payload)  # type: ignore[attr-defined]
-                session.save(session_path)
+        elif msg_type == "prev":
+            session.current_line = max(1, session.current_line - 1)
+            payload = json.dumps(
+                {"v": 1, "type": "position", "file": session.current_file, "line": session.current_line}
+            ).encode()
+            await ctx.room.local_participant.publish_data(payload)  # type: ignore[attr-defined]
+            session.save(session_path)
 
-            elif msg_type == "stop":
-                await agent_session.aclose()  # type: ignore[attr-defined]
+        elif msg_type == "stop":
+            await agent_session.aclose()  # type: ignore[attr-defined]
 
-        ctx.room.on("data_received", on_data)  # type: ignore[attr-defined]
-        await agent_session.start(  # type: ignore[attr-defined]
-            ctx.room,
-            agent=Agent(instructions="You are a helpful code explainer."),
-            room_input_options=RoomInputOptions(),
-        )
-
-    return entrypoint
+    ctx.room.on("data_received", on_data)  # type: ignore[attr-defined]
+    await agent_session.start(  # type: ignore[attr-defined]
+        ctx.room,
+        agent=Agent(instructions="You are a helpful code explainer."),
+        room_input_options=RoomInputOptions(),
+    )

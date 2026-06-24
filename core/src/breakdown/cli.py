@@ -86,20 +86,24 @@ def start(
 
     _ensure_livekit(settings)
 
-    from breakdown.indexer.store import create_store
+    import os as _os
+    import sys as _sys
+    _os.environ["BREAKDOWN_DIR"] = str(breakdown_dir)
+
     from breakdown.token_server import TokenServer
 
     token_server = TokenServer(settings=settings, breakdown_dir=breakdown_dir)
     token_server.start_background()
 
-    store = create_store(settings.index_backend, breakdown_dir / "index")
-
     from livekit.agents import WorkerOptions  # type: ignore[import-untyped]
     from livekit.agents import cli as lk_cli
 
-    from breakdown.agent import create_agent
+    from breakdown.agent import entrypoint
 
-    entrypoint = create_agent(settings, store, breakdown_dir)
+    # livekit's run_app parses sys.argv directly; keep only the sub-command
+    # so our workspace path argument doesn't appear as an unexpected arg.
+    _sys.argv = _sys.argv[:2]
+
     lk_cli.run_app(
         WorkerOptions(
             entrypoint_fnc=entrypoint,  # type: ignore[arg-type]
