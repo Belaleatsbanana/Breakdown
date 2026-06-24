@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 from pathlib import Path
@@ -78,7 +79,7 @@ async def entrypoint(ctx: agents.JobContext) -> None:
     stt = create_stt(settings)
     agent_session = AgentSession(llm=llm, tts=tts, stt=stt)  # type: ignore[arg-type]
 
-    async def on_data(packet: object) -> None:
+    async def _handle_data(packet: object) -> None:
         try:
             msg: dict[str, object] = json.loads(getattr(packet, "data", b"{}"))
         except Exception:
@@ -123,6 +124,10 @@ async def entrypoint(ctx: agents.JobContext) -> None:
 
         elif msg_type == "stop":
             await agent_session.aclose()  # type: ignore[attr-defined]
+
+    # room.on() requires a sync callback; schedule the async work as a task.
+    def on_data(packet: object) -> None:
+        asyncio.create_task(_handle_data(packet))
 
     ctx.room.on("data_received", on_data)  # type: ignore[attr-defined]
     await agent_session.start(  # type: ignore[attr-defined]
