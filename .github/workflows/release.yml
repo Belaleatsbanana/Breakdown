@@ -1,0 +1,73 @@
+# .github/workflows/release.yml
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Run CI
+        working-directory: core
+        run: |
+          uv sync --all-extras --dev
+          uv run pytest
+
+      - name: Build Python wheel
+        working-directory: core
+        run: uv build
+
+      - name: Publish to PyPI
+        working-directory: core
+        env:
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
+        run: uv publish
+
+      - name: Build VS Code extension
+        working-directory: clients/vscode
+        run: |
+          pnpm install
+          pnpm build
+          cd extension-host && npx @vscode/vsce package --no-dependencies
+
+      - name: Publish to VS Code Marketplace
+        working-directory: clients/vscode/extension-host
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+          # Note: VSCE_PAT expires annually. Rotate before expiry.
+          # Current expiry: update this comment when rotating the token.
+        run: npx @vscode/vsce publish --no-dependencies --pat "$VSCE_PAT"
+
+      - name: Build changelog
+        run: |
+          uv tool install towncrier
+          towncrier build --yes --version "${{ github.ref_name }}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: CHANGELOG.md
+          files: |
+            clients/vscode/extension-host/*.vsix
+            core/dist/*.whl
+            core/dist/*.tar.gz
