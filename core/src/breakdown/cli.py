@@ -102,7 +102,7 @@ def start(
     entrypoint = create_agent(settings, store, breakdown_dir)
     lk_cli.run_app(
         WorkerOptions(
-            entrypoint_fnc=entrypoint,
+            entrypoint_fnc=entrypoint,  # type: ignore[arg-type]
             api_key=settings.livekit_api_key,
             api_secret=settings.livekit_api_secret,
             ws_url=settings.livekit_url,
