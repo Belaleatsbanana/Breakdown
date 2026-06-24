@@ -21,7 +21,7 @@ def find_free_port(start: int) -> int:
                 return port
         except OSError:
             port += 1
-    raise RuntimeError("No free port found starting from {start}")
+    raise RuntimeError(f"No free port found starting from {start}")
 
 
 def write_runtime_info(port: int, livekit_url: str, breakdown_dir: Path) -> None:
@@ -55,7 +55,7 @@ class TokenServer:
         settings = self._settings
 
         class _Handler(BaseHTTPRequestHandler):
-            def do_GET(self) -> None:  # noqa: N802
+            def do_GET(self) -> None:
                 parsed = urlparse(self.path)
                 if parsed.path != "/token":
                     self.send_response(404)

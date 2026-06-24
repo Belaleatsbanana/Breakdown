@@ -7,7 +7,6 @@ import time
 from pathlib import Path
 
 import httpx
-import pytest
 
 from breakdown.config import Settings
 from breakdown.token_server import TokenServer, find_free_port, write_runtime_info
