@@ -1,0 +1,16 @@
+{
+  "name": "breakdown-webview",
+  "private": true,
+  "scripts": {
+    "build": "node esbuild.webview.config.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts"
+  },
+  "devDependencies": {
+    "esbuild": "^0.21.0",
+    "typescript": "^5.4.0"
+  },
+  "dependencies": {
+    "livekit-client": "^2.4.0"
+  }
+}

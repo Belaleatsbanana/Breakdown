@@ -1,0 +1,42 @@
+{
+  "name": "breakdown-vscode",
+  "displayName": "Breakdown",
+  "description": "Voice-driven AI code explainer",
+  "version": "0.1.0",
+  "publisher": "breakdown",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Other"],
+  "activationEvents": ["onCommand:breakdown.startSession"],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      { "command": "breakdown.startSession", "title": "Breakdown: Start Session" },
+      { "command": "breakdown.stopSession", "title": "Breakdown: Stop Session" },
+      { "command": "breakdown.explainLine", "title": "Breakdown: Explain Line" },
+      { "command": "breakdown.nextLine", "title": "Breakdown: Next Line" },
+      { "command": "breakdown.prevLine", "title": "Breakdown: Previous Line" },
+      { "command": "breakdown.pushToTalk", "title": "Breakdown: Push to Talk" }
+    ],
+    "keybindings": [
+      { "command": "breakdown.startSession", "key": "ctrl+k ctrl+e", "mac": "cmd+k cmd+e" },
+      { "command": "breakdown.nextLine",     "key": "ctrl+k ctrl+n", "mac": "cmd+k cmd+n" },
+      { "command": "breakdown.prevLine",     "key": "ctrl+k ctrl+p", "mac": "cmd+k cmd+p" },
+      { "command": "breakdown.pushToTalk",   "key": "ctrl+k ctrl+space", "mac": "cmd+k cmd+space" },
+      { "command": "breakdown.stopSession",  "key": "ctrl+k ctrl+q", "mac": "cmd+k cmd+q" }
+    ]
+  },
+  "scripts": {
+    "build": "node esbuild.host.config.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.85.0",
+    "esbuild": "^0.21.0",
+    "typescript": "^5.4.0"
+  },
+  "dependencies": {
+    "livekit-server-sdk": "^2.4.0"
+  }
+}
