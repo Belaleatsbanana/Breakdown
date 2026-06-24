@@ -4,7 +4,9 @@ A voice-driven AI code explainer. Select a line in VS Code, press a shortcut,
 and the AI explains it aloud. Navigate line by line with keyboard shortcuts.
 Interrupt at any time with a typed or spoken question.
 
-<!-- demo GIF goes here -- see scripts/RECORDING.md for how to record it -->
+## Demo
+
+<!-- demo GIF goes here. See scripts/RECORDING.md for how to record it. -->
 
 ## Quick Start
 
@@ -51,7 +53,7 @@ for the full list of supported providers and configuration options.
 The Python core runs as a local server using [LiveKit](https://livekit.io) for
 real-time audio over WebRTC. The VS Code extension is a thin client. Future
 platform clients (JetBrains, Neovim) only need to implement the thin client
-protocol -- see [clients/template/README.md](clients/template/README.md).
+protocol. See [clients/template/README.md](clients/template/README.md).
 
 See [docs/architecture.md](docs/architecture.md) for a full diagram.
 

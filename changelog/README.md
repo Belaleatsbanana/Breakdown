@@ -7,11 +7,11 @@ Add one file per pull request in this directory. Do not edit `CHANGELOG.md` dire
 `<PR_NUMBER>.<type>.md`
 
 Types:
-- `feature` -- new feature
-- `bugfix` -- bug fix
-- `doc` -- documentation change
-- `removal` -- deprecated feature removed
-- `misc` -- maintenance, dependency update, refactor
+- `feature`: new feature
+- `bugfix`: bug fix
+- `doc`: documentation change
+- `removal`: deprecated feature removed
+- `misc`: maintenance, dependency update, refactor
 
 ## Content
 

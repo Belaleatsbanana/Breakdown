@@ -6,7 +6,7 @@ GREEN='\033[0;32m'
 NC='\033[0m'
 
 ok() { echo -e "${GREEN}[ok]${NC} $1"; }
-fail() { echo -e "${RED}[missing]${NC} $1 -- $2"; FAILED=1; }
+fail() { echo -e "${RED}[missing]${NC} $1: install from $2"; FAILED=1; }
 
 FAILED=0
 

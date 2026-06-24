@@ -22,6 +22,6 @@ jobs:
               core.setFailed(
                 "This PR does not reference a GitHub issue. " +
                 "Please link an issue using 'Closes #N' in the PR description. " +
-                "Bug fixes are exempt -- add the 'bug' label to bypass this check."
+                "Bug fixes are exempt. Add the 'bug' label to bypass this check."
               );
             }

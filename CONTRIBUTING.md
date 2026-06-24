@@ -66,7 +66,7 @@ Same process as LLM. Edit `providers/tts.py` or `providers/stt.py` respectively.
 
 Read `clients/template/README.md`. It contains the full protocol specification
 and a step-by-step checklist for building a thin client. You do not need to
-understand the Python core to build a client -- only the protocol matters.
+understand the Python core to build a client. Only the protocol matters.
 
 ## Changelog
 
