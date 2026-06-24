@@ -4,6 +4,11 @@
   "description": "Voice-driven AI code explainer",
   "version": "0.1.0",
   "publisher": "breakdown",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/breakdown/breakdown"
+  },
   "engines": { "vscode": "^1.85.0" },
   "categories": ["Other"],
   "activationEvents": ["onCommand:breakdown.startSession"],
