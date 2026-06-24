@@ -1,3 +1,5 @@
 packages:
   - "extension-host"
   - "webview"
+onlyBuiltDependencies:
+  - esbuild
