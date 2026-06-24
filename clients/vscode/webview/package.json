@@ -7,7 +7,7 @@
     "lint": "eslint src --ext .ts"
   },
   "devDependencies": {
-    "esbuild": "^0.21.0",
+    "esbuild": "^0.28.1",
     "typescript": "^5.4.0"
   },
   "dependencies": {
