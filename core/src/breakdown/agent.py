@@ -1,18 +1,18 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from pathlib import Path
-from typing import Any
 
-from loguru import logger
 from livekit import agents  # type: ignore[import-untyped]
-from livekit.agents import AgentSession, Agent, RoomInputOptions  # type: ignore[import-untyped]
+from livekit.agents import Agent, AgentSession, RoomInputOptions  # type: ignore[import-untyped]
+from loguru import logger
 
 from breakdown.config import Settings
 from breakdown.indexer.store import VectorStore
 from breakdown.providers.llm import create_llm
-from breakdown.providers.tts import create_tts
 from breakdown.providers.stt import create_stt
+from breakdown.providers.tts import create_tts
 from breakdown.session import Session
 
 
@@ -42,25 +42,25 @@ async def _index_context(
 ) -> tuple[list[str], str]:
     abs_path = workspace_root / file
     try:
-        lines = abs_path.read_text(errors="replace").splitlines()
+        source_lines = abs_path.read_text(errors="replace").splitlines()
     except OSError:
         return [], ""
 
     half = settings.context_window_lines // 2
     start = max(0, line - 1 - half)
-    end = min(len(lines), line - 1 + half)
+    end = min(len(source_lines), line - 1 + half)
     window = "\n".join(
-        f"{i + 1}: {l}" for i, l in enumerate(lines[start:end], start=start)
+        f"{i + 1}: {src}" for i, src in enumerate(source_lines[start:end], start=start)
     )
 
     try:
         from breakdown.indexer.embedder import create_embedder
         embedder = create_embedder(settings.embedding_provider, settings)
-        query_emb = embedder.embed([lines[line - 1] if line <= len(lines) else ""])[0]
+        query_emb = embedder.embed([source_lines[line - 1] if line <= len(source_lines) else ""])[0]
         chunks = store.search(query_emb, k=5)
         context = [c.text for c in chunks]
-    except Exception as e:
-        logger.warning("Context retrieval failed: {}", e)
+    except Exception as exc:
+        logger.warning("Context retrieval failed: {}", exc)
         context = []
 
     return context, window
@@ -70,7 +70,7 @@ def create_agent(
     settings: Settings,
     store: VectorStore,
     breakdown_dir: Path,
-) -> Any:
+) -> object:
     async def entrypoint(ctx: agents.JobContext) -> None:
         workspace_root = breakdown_dir.parent
         session = Session.load(breakdown_dir / "session.json") or Session(
@@ -84,18 +84,17 @@ def create_agent(
 
         agent_session = AgentSession(llm=llm, tts=tts, stt=stt)
 
-        async def on_data(packet: Any) -> None:
-            import json as _json
+        async def on_data(packet: object) -> None:
             try:
-                msg = _json.loads(packet.data)
+                msg: dict[str, object] = json.loads(getattr(packet, "data", b"{}"))
             except Exception:
                 return
 
-            msg_type: str = msg.get("type", "")
+            msg_type: str = str(msg.get("type", ""))
 
             if msg_type == "explain":
-                session.current_file = msg.get("file", "")
-                session.current_line = int(msg.get("line", 1))
+                session.current_file = str(msg.get("file", ""))
+                session.current_line = int(msg.get("line", 1))  # type: ignore[arg-type]
                 context, window = await _index_context(
                     store,
                     session.current_file,
@@ -103,9 +102,11 @@ def create_agent(
                     workspace_root,
                     settings,
                 )
-                system = _build_system_prompt(session, context, window)
-                target_line = window.split("\n")[settings.context_window_lines // 2] if window else ""
-                await agent_session.say(
+                _build_system_prompt(session, context, window)
+                mid = settings.context_window_lines // 2
+                window_lines = window.split("\n")
+                target_line = window_lines[mid] if window and mid < len(window_lines) else ""
+                await agent_session.say(  # type: ignore[attr-defined]
                     f"Line {session.current_line}: {target_line}",
                     allow_interruptions=True,
                 )
@@ -114,9 +115,13 @@ def create_agent(
 
             elif msg_type == "next":
                 session.current_line += 1
-                await ctx.room.local_participant.publish_data(
-                    _json.dumps({"v": 1, "type": "position", "file": session.current_file, "line": session.current_line}).encode()
-                )
+                payload = json.dumps({
+                    "v": 1,
+                    "type": "position",
+                    "file": session.current_file,
+                    "line": session.current_line,
+                }).encode()
+                await ctx.room.local_participant.publish_data(payload)  # type: ignore[attr-defined]
                 session.save(session_path)
 
             elif msg_type == "prev":
@@ -124,10 +129,10 @@ def create_agent(
                 session.save(session_path)
 
             elif msg_type == "stop":
-                await agent_session.aclose()
+                await agent_session.aclose()  # type: ignore[attr-defined]
 
-        ctx.room.on("data_received", on_data)
-        await agent_session.start(
+        ctx.room.on("data_received", on_data)  # type: ignore[attr-defined]
+        await agent_session.start(  # type: ignore[attr-defined]
             ctx.room,
             agent=Agent(instructions="You are a helpful code explainer."),
             room_input_options=RoomInputOptions(),
