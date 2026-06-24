@@ -1,0 +1,27 @@
+# .github/workflows/issue-check.yml
+name: Issue Check
+
+on:
+  pull_request:
+    types: [opened, edited]
+
+jobs:
+  check-linked-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for linked issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.pull_request.body || "";
+            const hasIssue = /closes?\s+#\d+|fixes?\s+#\d+|resolves?\s+#\d+|related\s+to\s+#\d+/i.test(body);
+            const isDependabot = context.payload.pull_request.user.login === "dependabot[bot]";
+            const isBugFix = context.payload.pull_request.labels?.some(l => l.name === "bug");
+
+            if (!hasIssue && !isDependabot && !isBugFix) {
+              core.setFailed(
+                "This PR does not reference a GitHub issue. " +
+                "Please link an issue using 'Closes #N' in the PR description. " +
+                "Bug fixes are exempt -- add the 'bug' label to bypass this check."
+              );
+            }

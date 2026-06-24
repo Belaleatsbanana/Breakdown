@@ -1,0 +1,91 @@
+# .github/workflows/ci.yml
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  python:
+    name: Python ${{ matrix.python-version }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        working-directory: core
+        run: uv sync --all-extras --dev
+
+      - name: Lint
+        working-directory: core
+        run: uv run ruff check src/ tests/
+
+      - name: Type check
+        working-directory: core
+        run: uv run basedpyright src/
+
+      - name: Test
+        working-directory: core
+        run: uv run pytest --cov=breakdown --cov-report=xml -x
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+        with:
+          files: core/coverage.xml
+
+  typescript:
+    name: TypeScript on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "pnpm"
+          cache-dependency-path: clients/vscode/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: clients/vscode
+        run: pnpm install
+
+      - name: Typecheck
+        working-directory: clients/vscode
+        run: pnpm typecheck
+
+      - name: Build
+        working-directory: clients/vscode
+        run: pnpm build
+
+      - name: Check bundle size
+        working-directory: clients/vscode/extension-host
+        shell: bash
+        run: |
+          SIZE=$(wc -c < dist/extension.js)
+          if [ "$SIZE" -gt 524288 ]; then
+            echo "extension.js is too large: ${SIZE} bytes (limit: 512KB)"
+            exit 1
+          fi
+          echo "extension.js size: ${SIZE} bytes (ok)"
