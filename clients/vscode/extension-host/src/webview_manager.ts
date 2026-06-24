@@ -19,6 +19,9 @@ export class WebviewManager {
 
   show(token: string, url: string, room: string): void {
     if (this._panel) {
+      // Reconnect with new credentials rather than reusing stale ones
+      this.send({ type: "disconnect" });
+      this.send({ type: "connect", token, url, room });
       this._panel.reveal();
       return;
     }
@@ -39,11 +42,23 @@ export class WebviewManager {
       vscode.Uri.file(path.join(this._context.extensionPath, "dist", "webview.js")),
     );
 
+    const nonce = getNonce();
+    const csp = [
+      `default-src 'none'`,
+      `script-src 'nonce-${nonce}'`,
+      `connect-src wss: https:`,
+      `media-src *`,
+    ].join("; ");
+
     this._panel.webview.html = `<!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8"><title>Breakdown</title></head>
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="${csp}">
+  <title>Breakdown</title>
+</head>
 <body>
-<script src="${webviewScriptUri}"></script>
+<script nonce="${nonce}" src="${webviewScriptUri}"></script>
 </body>
 </html>`;
 
@@ -71,4 +86,13 @@ export class WebviewManager {
     this._panel?.dispose();
     this._statusBar.dispose();
   }
+}
+
+function getNonce(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  for (let i = 0; i < 32; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
 }

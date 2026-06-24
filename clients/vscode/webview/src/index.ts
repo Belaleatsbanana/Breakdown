@@ -14,6 +14,10 @@ bridge.onMessage(async (msg: HostToWebview) => {
     room = new LiveKitRoom(bridge.send);
     try {
       await room.connect(msg.url, msg.token);
+      const track = await mic.start();
+      if (track) {
+        await room.publishMicTrack(track);
+      }
     } catch (err) {
       bridge.send({ type: "error", message: String(err) });
     }

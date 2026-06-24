@@ -31,6 +31,10 @@ export async function getToken(port: number, room: string): Promise<TokenRespons
         let body = "";
         res.on("data", (chunk: Buffer) => { body += chunk.toString(); });
         res.on("end", () => {
+          if (res.statusCode !== 200) {
+            reject(new Error(`Token server returned HTTP ${res.statusCode}: ${body}`));
+            return;
+          }
           try {
             resolve(JSON.parse(body) as TokenResponse);
           } catch {

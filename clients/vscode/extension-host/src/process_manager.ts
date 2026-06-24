@@ -53,12 +53,22 @@ export class ProcessManager {
     if (!this._process) {
       return;
     }
-    if (os.platform() === "win32") {
-      cp.exec(`taskkill /F /T /PID ${this._process.pid}`);
-    } else {
-      this._process.kill("SIGTERM");
-    }
+    const proc = this._process;
     this._process = null;
+
+    if (os.platform() === "win32") {
+      cp.exec(`taskkill /F /T /PID ${proc.pid}`);
+      return;
+    }
+
+    proc.kill("SIGTERM");
+    // Escalate to SIGKILL if the process doesn't exit within 5 seconds
+    const escalation = setTimeout(() => {
+      if (!proc.killed) {
+        proc.kill("SIGKILL");
+      }
+    }, 5000);
+    proc.once("exit", () => clearTimeout(escalation));
   }
 
   isRunning(): boolean {
