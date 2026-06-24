@@ -5,11 +5,10 @@ from pathlib import Path
 from loguru import logger
 
 try:
-    from tree_sitter import Language  # type: ignore[import-untyped]
+    import tree_sitter  # type: ignore[import-untyped]  # noqa: F401
     _has_tree_sitter: bool = True
 except ImportError:
     _has_tree_sitter = False
-    Language = None  # type: ignore[assignment]
     logger.warning("tree-sitter not installed; parsing disabled")
 
 _EXT_TO_LANGUAGE: dict[str, str] = {
