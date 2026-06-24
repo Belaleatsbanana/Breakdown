@@ -308,13 +308,13 @@ wheels = [
 ]
 
 [[package]]
-name = "breakdown"
+name = "breakdown-ai"
 source = { editable = "." }
 dependencies = [
     { name = "httpx" },
     { name = "lancedb" },
     { name = "litellm" },
-    { name = "livekit-agents", extra = ["openai"] },
+    { name = "livekit-agents", extra = ["deepgram", "openai"] },
     { name = "livekit-api" },
     { name = "loguru" },
     { name = "pydantic-settings" },
@@ -350,7 +350,7 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.27" },
     { name = "lancedb", specifier = ">=0.6" },
     { name = "litellm", specifier = ">=1.40" },
-    { name = "livekit-agents", extras = ["openai"], specifier = ">=1.0" },
+    { name = "livekit-agents", extras = ["deepgram", "openai"], specifier = ">=1.0" },
     { name = "livekit-api", specifier = ">=0.7" },
     { name = "loguru", specifier = ">=0.7" },
     { name = "pydantic-settings", specifier = ">=2.3" },
@@ -1548,6 +1548,9 @@ codecs = [
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "numpy", version = "2.5.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
 ]
+deepgram = [
+    { name = "livekit-plugins-deepgram" },
+]
 images = [
     { name = "pillow" },
 ]
@@ -1628,6 +1631,20 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/ba/9a/7cdf1a77d5fd80e06533d4f2584c45d2c978f1249338969f814502db45ad/livekit_local_inference-0.2.6-cp314-cp314-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:80dc582413d816c86a0620410c2bfc3234e782a49d2b07b4bed0ff6285bdf4a1", size = 34824215, upload-time = "2026-06-24T16:55:45.02Z" },
     { url = "https://files.pythonhosted.org/packages/86/f2/0207071f236f639cf9515838ce98cfc3a8c1b19db8e6f46350e7231f2200/livekit_local_inference-0.2.6-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:9c148ec2735e903dc00e37dc2580e0417f67ec7ee4be119dca7844b104afbfe9", size = 34868380, upload-time = "2026-06-24T16:55:48.119Z" },
     { url = "https://files.pythonhosted.org/packages/1e/91/c194db20c8e9272cadf0913d42392cda5eec5e78a14820a3fa678e42e4b6/livekit_local_inference-0.2.6-cp314-cp314-win_amd64.whl", hash = "sha256:4140e4fd60dd7b7d69a55e1d454d5d893f8ffe026c30e0d7cd31fa42b10d5621", size = 34914243, upload-time = "2026-06-24T16:55:51.322Z" },
+]
+
+[[package]]
+name = "livekit-plugins-deepgram"
+version = "1.6.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "livekit-agents", extra = ["codecs"] },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/0a/93/9f36251912a98f5f121cef3ec60c12cb23eb1a52c19b3d57cae363231a73/livekit_plugins_deepgram-1.6.3.tar.gz", hash = "sha256:19ebe23fd4ed4423bcffc48ab4a0a9e5b46f5790682b9b806fd3ff38127bef42", size = 18347, upload-time = "2026-06-22T22:24:58.99Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/db/60/7334d317a3838f8b38f30f7b9c4952b649c5ef14cf23c47d9a59d96ff073/livekit_plugins_deepgram-1.6.3-py3-none-any.whl", hash = "sha256:dea37c44f48123f2caf597303081734eb536b20119a16b7fda5b79beb93bce07", size = 23085, upload-time = "2026-06-22T22:24:57.955Z" },
 ]
 
 [[package]]

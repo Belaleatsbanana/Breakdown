@@ -10,7 +10,7 @@ readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.11"
 dependencies = [
-    "livekit-agents[openai]>=1.0",
+    "livekit-agents[openai,deepgram]>=1.0",
     "livekit-api>=0.7",
     "litellm>=1.40",
     "lancedb>=0.6",

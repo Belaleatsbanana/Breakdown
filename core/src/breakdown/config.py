@@ -25,11 +25,13 @@ class Settings(BaseSettings):
     llm_model: str = "gpt-4o"
     llm_context_window: int = 128_000
     openai_api_key: str = ""
+    mistral_api_key: str = ""
 
     # TTS
-    tts_provider: Literal["openai", "elevenlabs"] = "openai"
+    tts_provider: Literal["openai", "elevenlabs", "deepgram"] = "openai"
     elevenlabs_api_key: str = ""
     elevenlabs_voice_id: str = "Rachel"
+    deepgram_tts_model: str = "aura-2-andromeda-en"
 
     # STT
     stt_provider: Literal["openai", "deepgram"] = "openai"

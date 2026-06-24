@@ -4,12 +4,17 @@ from breakdown.config import Settings
 
 
 def create_llm(settings: Settings) -> object:
-    from livekit.plugins import openai as lk_openai  # type: ignore[import-untyped]
+    if settings.llm_provider == "mistral":
+        if not settings.mistral_api_key:
+            raise ValueError("MISTRAL_API_KEY is required when LLM_PROVIDER=mistral")
+        from livekit.plugins import openai as lk_openai  # type: ignore[import-untyped]
+        return lk_openai.LLM(
+            model=settings.llm_model,
+            api_key=settings.mistral_api_key,
+            base_url="https://api.mistral.ai/v1",
+        )
 
-    # Use LiveKit's OpenAI plugin as the base; route through LiteLLM for
-    # non-OpenAI models by setting the base_url and api_key appropriately.
-    # LiteLLM proxy is not used -- we call litellm.completion directly in the
-    # agent when needed for non-streaming cases.
+    from livekit.plugins import openai as lk_openai  # type: ignore[import-untyped]
     return lk_openai.LLM(
         model=settings.llm_model,
         api_key=settings.openai_api_key or "placeholder",

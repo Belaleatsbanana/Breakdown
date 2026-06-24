@@ -1,3 +1,4 @@
+.env
 .coverage
 coverage.xml
 htmlcov/

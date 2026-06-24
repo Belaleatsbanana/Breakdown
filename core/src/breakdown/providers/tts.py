@@ -22,6 +22,17 @@ def create_tts(settings: Settings) -> object:
             voice_id=settings.elevenlabs_voice_id,
         )
 
+    if settings.tts_provider == "deepgram":
+        if not settings.deepgram_api_key:
+            raise ValueError(
+                "DEEPGRAM_API_KEY is required when TTS_PROVIDER=deepgram"
+            )
+        from livekit.plugins import deepgram  # type: ignore[import-untyped]
+        return deepgram.TTS(
+            model=settings.deepgram_tts_model,
+            api_key=settings.deepgram_api_key,
+        )
+
     raise ValueError(
-        f"Unknown TTS provider: {settings.tts_provider!r}. Choose 'openai' or 'elevenlabs'."
+        f"Unknown TTS provider: {settings.tts_provider!r}. Choose 'openai', 'elevenlabs', or 'deepgram'."
     )
