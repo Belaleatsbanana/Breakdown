@@ -24,8 +24,14 @@ class Settings(BaseSettings):
     llm_provider: str = "openai"
     llm_model: str = "gpt-4o"
     llm_context_window: int = 128_000
+    llm_base_url: str = ""  # override base URL for any OpenAI-compatible provider
     openai_api_key: str = ""
+    anthropic_api_key: str = ""
     mistral_api_key: str = ""
+    groq_api_key: str = ""
+    openrouter_api_key: str = ""
+    together_api_key: str = ""
+    perplexity_api_key: str = ""
 
     # TTS
     tts_provider: Literal["openai", "elevenlabs", "deepgram"] = "openai"
