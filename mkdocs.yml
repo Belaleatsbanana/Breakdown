@@ -1,0 +1,46 @@
+site_name: Breakdown
+site_description: Voice-driven AI code explainer
+site_url: https://breakdown-project.dev
+repo_url: https://github.com/breakdown-project/breakdown
+repo_name: breakdown-project/breakdown
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - content.code.copy
+    - content.action.edit
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Providers: providers.md
+  - Architecture: architecture.md
+  - Protocol: protocol.md
+  - Supported Languages: supported-languages.md
+  - Contributing: contributing.md
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - tables
