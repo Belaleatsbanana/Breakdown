@@ -46,7 +46,7 @@ export class WebviewManager {
     const csp = [
       `default-src 'none'`,
       `script-src 'nonce-${nonce}'`,
-      `connect-src wss: https:`,
+      `connect-src wss: https: ws://localhost:* http://localhost:*`,
       `media-src *`,
     ].join("; ");
 
