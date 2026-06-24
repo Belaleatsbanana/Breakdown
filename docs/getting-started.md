@@ -10,13 +10,13 @@
 ## Install the Python Core
 
 ```bash
-pip install breakdown
+pip install breakdown-ai
 ```
 
 Or with uv:
 
 ```bash
-uv tool install breakdown
+uv tool install breakdown-ai
 ```
 
 ## Install the VS Code Extension
@@ -57,7 +57,7 @@ Subsequent starts are fast because only changed files are re-indexed.
 **"breakdown command not found"**
 Make sure the Python package is installed and on your PATH. With uv:
 ```bash
-uv tool install breakdown
+uv tool install breakdown-ai
 ```
 
 **No audio**

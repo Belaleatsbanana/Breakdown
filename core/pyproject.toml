@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "breakdown"
+name = "breakdown-ai"
 dynamic = ["version"]
 description = "Voice-driven AI code explainer"
 readme = "README.md"

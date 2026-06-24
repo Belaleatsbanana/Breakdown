@@ -37,7 +37,7 @@ export class ProcessManager {
       this._process.on("error", (err) => {
         if ((err as NodeJS.ErrnoException).code === "ENOENT") {
           window.showErrorMessage(
-            "Breakdown: `breakdown` command not found. Install it with: pip install breakdown",
+            "Breakdown: `breakdown` command not found. Install it with: pip install breakdown-ai",
           );
         } else {
           window.showErrorMessage(`Breakdown: failed to start process: ${err.message}`);

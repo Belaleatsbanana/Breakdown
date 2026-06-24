@@ -13,7 +13,7 @@ Interrupt at any time with a typed or spoken question.
 **1. Install the Python core**
 
 ```bash
-pip install breakdown
+pip install breakdown-ai
 ```
 
 **2. Install the VS Code extension**
