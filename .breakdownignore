@@ -1,0 +1,7 @@
+# .breakdownignore
+# Files and directories excluded from Breakdown's codebase index.
+# Syntax is the same as .gitignore.
+
+# Add project-specific exclusions below:
+# vendor/
+# data/
