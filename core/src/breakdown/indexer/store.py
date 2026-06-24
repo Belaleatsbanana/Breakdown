@@ -68,12 +68,12 @@ class _LanceDBStore:
             return []
         return [
             Chunk(
-                file=r["file"],
-                start_line=r["start_line"],
-                end_line=r["end_line"],
-                text=r["text"],
-                type=r["type"],
-                name=r["name"],
+                file=str(r["file"]),
+                start_line=int(r["start_line"]),  # type: ignore[arg-type]
+                end_line=int(r["end_line"]),  # type: ignore[arg-type]
+                text=str(r["text"]),
+                type=str(r["type"]),
+                name=str(r["name"]),
             )
             for r in results
         ]
@@ -104,7 +104,7 @@ class _ChromaDBStore:
 
     def add(self, chunks: list[Chunk], embeddings: list[list[float]]) -> list[str]:
         ids = [str(uuid.uuid4()) for _ in chunks]
-        self._col.add(
+        self._col.add(  # type: ignore[arg-type]
             ids=ids,
             embeddings=embeddings,
             documents=[c.text for c in chunks],
