@@ -47,7 +47,6 @@ breakdown = "breakdown.cli:app"
 
 [tool.hatch.version]
 path = "../VERSION"
-pattern = "^(?P<version>.+)$"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/breakdown"]
@@ -55,6 +54,7 @@ packages = ["src/breakdown"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+addopts = "--cov=breakdown --cov-report=term-missing"
 
 [tool.pyright]
 pythonVersion = "3.11"
