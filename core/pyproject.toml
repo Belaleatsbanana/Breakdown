@@ -55,6 +55,7 @@ packages = ["src/breakdown"]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 addopts = "--cov=breakdown --cov-report=term-missing"
+markers = ["integration: marks tests as integration tests (may require external services)"]
 
 [tool.pyright]
 pythonVersion = "3.11"
