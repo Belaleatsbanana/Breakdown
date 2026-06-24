@@ -1,0 +1,32 @@
+# Third-Party Model Licenses
+
+Breakdown uses the following AI models by default. Each has its own license.
+
+## OpenAI Models (LLM, TTS, STT)
+
+Used when OPENAI_API_KEY is set. Subject to OpenAI's usage policies:
+https://openai.com/policies/usage-policies
+
+## BAAI/bge-code-v1 (local embeddings, optional)
+
+Used when EMBEDDING_PROVIDER=local. Licensed under MIT License.
+https://huggingface.co/BAAI/bge-code-v1
+
+## all-MiniLM-L6-v2 (fallback local embeddings)
+
+Licensed under Apache 2.0.
+https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
+
+## ElevenLabs TTS (optional)
+
+Used when TTS_PROVIDER=elevenlabs. Subject to ElevenLabs terms of service.
+https://elevenlabs.io/terms
+
+## Deepgram STT (optional)
+
+Used when STT_PROVIDER=deepgram. Subject to Deepgram terms of service.
+https://deepgram.com/terms
+
+---
+
+When adding a new model or provider, update this file with its license.
