@@ -80,8 +80,8 @@ class TokenServer:
                     self.send_response(500)
                     self.end_headers()
 
-            def log_message(self, fmt: str, *args: object) -> None:
-                logger.debug("token_server: " + fmt, *args)
+            def log_message(self, format: str, *args: object) -> None:
+                logger.debug("token_server: " + format, *args)
 
         server = HTTPServer(("127.0.0.1", port), _Handler)
         logger.info("Token server listening on 127.0.0.1:{}", port)

@@ -31,7 +31,7 @@ class _LanceDBStore:
 
         db_path.mkdir(parents=True, exist_ok=True)
         self._db = lancedb.connect(str(db_path))
-        self._table_created = self._TABLE in self._db.list_tables()
+        self._table_created = self._TABLE in list(self._db.list_tables())  # type: ignore[reportOperatorIssue]
         if self._table_created:
             self._table = self._db.open_table(self._TABLE)
         else:
@@ -56,7 +56,7 @@ class _LanceDBStore:
             self._table = self._db.create_table(self._TABLE, data=rows, mode="overwrite")
             self._table_created = True
         else:
-            self._table.add(rows)
+            self._table.add(rows)  # type: ignore[union-attr]
         return ids
 
     def search(self, embedding: list[float], k: int) -> list[Chunk]:

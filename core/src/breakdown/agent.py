@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 import json
 from pathlib import Path
 
@@ -14,11 +13,6 @@ from breakdown.providers.llm import create_llm
 from breakdown.providers.stt import create_stt
 from breakdown.providers.tts import create_tts
 from breakdown.session import Session
-
-
-def _room_name(workspace_root: Path) -> str:
-    digest = hashlib.sha256(str(workspace_root.resolve()).encode()).hexdigest()[:12]
-    return f"breakdown-{digest}"
 
 
 def _build_system_prompt(session: Session, context_chunks: list[str], window: str) -> str:
@@ -82,7 +76,7 @@ def create_agent(
         tts = create_tts(settings)
         stt = create_stt(settings)
 
-        agent_session = AgentSession(llm=llm, tts=tts, stt=stt)
+        agent_session = AgentSession(llm=llm, tts=tts, stt=stt)  # type: ignore[arg-type]
 
         async def on_data(packet: object) -> None:
             try:

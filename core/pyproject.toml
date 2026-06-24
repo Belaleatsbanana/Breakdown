@@ -63,3 +63,10 @@ pythonVersion = "3.11"
 typeCheckingMode = "strict"
 venvPath = "."
 venv = ".venv"
+# lancedb, chromadb, and livekit-agents ship without complete type stubs;
+# suppress the resulting Unknown propagation into our code.
+reportUnknownMemberType = "none"
+reportUnknownVariableType = "none"
+reportUnknownArgumentType = "none"
+reportUnknownParameterType = "none"
+reportMissingTypeStubs = "none"
