@@ -104,9 +104,9 @@ class _ChromaDBStore:
 
     def add(self, chunks: list[Chunk], embeddings: list[list[float]]) -> list[str]:
         ids = [str(uuid.uuid4()) for _ in chunks]
-        self._col.add(  # type: ignore[arg-type]
+        self._col.add(
             ids=ids,
-            embeddings=embeddings,
+            embeddings=embeddings,  # type: ignore[arg-type]
             documents=[c.text for c in chunks],
             metadatas=[
                 {
@@ -123,15 +123,19 @@ class _ChromaDBStore:
 
     def search(self, embedding: list[float], k: int) -> list[Chunk]:
         results = self._col.query(query_embeddings=[embedding], n_results=k)
-        chunks = []
-        for doc, meta in zip(results["documents"][0], results["metadatas"][0]):
+        chunks: list[Chunk] = []
+        raw_docs = results["documents"]  # type: ignore[reportOptionalSubscript]
+        raw_metas = results["metadatas"]  # type: ignore[reportOptionalSubscript]
+        if raw_docs is None or raw_metas is None:
+            return chunks
+        for doc, meta in zip(raw_docs[0], raw_metas[0]):
             chunks.append(Chunk(
-                file=meta["file"],
-                start_line=int(meta["start_line"]),
-                end_line=int(meta["end_line"]),
-                text=doc,
-                type=meta["type"],
-                name=meta["name"],
+                file=str(meta["file"]),  # type: ignore[arg-type]
+                start_line=int(meta["start_line"]),  # type: ignore[arg-type]
+                end_line=int(meta["end_line"]),  # type: ignore[arg-type]
+                text=str(doc),
+                type=str(meta["type"]),  # type: ignore[arg-type]
+                name=str(meta["name"]),  # type: ignore[arg-type]
             ))
         return chunks
 
