@@ -30,17 +30,7 @@ def parse_file(
 
     try:
         parser = Parser()  # type: ignore[call-arg]
-
-        # Set the language (tree-sitter >= 0.24 uses language property)
-        # This may fail if language is a mock object, but we handle that
-        try:
-            parser.language = language  # type: ignore[attr-defined]
-        except (TypeError, AttributeError):
-            # If setting language fails, still try to parse
-            # (for mock objects that don't strictly require Language type)
-            pass
-
-        # Try to parse
+        parser.set_language(language)  # type: ignore[attr-defined]
         tree = parser.parse(source)  # type: ignore[union-attr]
         return tree, source
     except Exception as e:
