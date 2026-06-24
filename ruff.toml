@@ -3,6 +3,7 @@ target-version = "py311"
 
 [lint]
 select = ["E", "F", "I", "UP", "ANN", "RUF", "T20"]
+ignore = ["ANN101", "ANN102"]
 
 [lint.isort]
 known-first-party = ["breakdown"]
