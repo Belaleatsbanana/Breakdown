@@ -102,7 +102,10 @@ def create_agent(
                     workspace_root,
                     settings,
                 )
-                _build_system_prompt(session, context, window)
+                system = _build_system_prompt(session, context, window)
+                session.add_turn("system", system)
+                budget = int(settings.llm_context_window * settings.history_budget_pct)
+                session.trim_to_budget(budget)
                 mid = settings.context_window_lines // 2
                 window_lines = window.split("\n")
                 target_line = window_lines[mid] if window and mid < len(window_lines) else ""
@@ -126,6 +129,13 @@ def create_agent(
 
             elif msg_type == "prev":
                 session.current_line = max(1, session.current_line - 1)
+                payload = json.dumps({
+                    "v": 1,
+                    "type": "position",
+                    "file": session.current_file,
+                    "line": session.current_line,
+                }).encode()
+                await ctx.room.local_participant.publish_data(payload)  # type: ignore[attr-defined]
                 session.save(session_path)
 
             elif msg_type == "stop":
