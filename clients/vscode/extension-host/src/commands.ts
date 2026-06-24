@@ -2,7 +2,7 @@
 import * as vscode from "vscode";
 import * as crypto from "crypto";
 import * as path from "path";
-import { getTokenWithRetry } from "./token_client";
+import { getToken, getTokenWithRetry, readRuntimeInfo } from "./token_client";
 import { ProcessManager } from "./process_manager";
 import { WebviewManager } from "./webview_manager";
 
@@ -49,11 +49,29 @@ export function registerCommands(
         vscode.window.showErrorMessage("Breakdown: open a workspace folder first.");
         return;
       }
-      processManager.start(root);
       const breakdownDir = path.join(root, ".breakdown");
       const room = roomName(root);
+
+      // Only spawn a new agent if one isn't already responding.
+      // Spawning when a server exists overwrites runtime.json with a new port
+      // and the extension times out waiting for the replacement to start.
+      const existing = readRuntimeInfo(breakdownDir);
+      let alreadyRunning = false;
+      if (existing) {
+        try {
+          await getToken(existing.port, room);
+          alreadyRunning = true;
+        } catch {
+          // not running — fall through to spawn
+        }
+      }
+      if (!alreadyRunning) {
+        processManager.start(root);
+      }
+
       try {
-        const { token, url } = await getTokenWithRetry(breakdownDir, room);
+        // 20 attempts × 500 ms = 10 s, enough for a cold agent start (~8 s)
+        const { token, url } = await getTokenWithRetry(breakdownDir, room, 20, 500);
         webviewManager.show(token, url, room);
       } catch (err) {
         vscode.window.showErrorMessage(`Breakdown: ${String(err)}`);
