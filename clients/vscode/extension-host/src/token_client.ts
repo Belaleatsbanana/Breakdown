@@ -6,11 +6,13 @@ import * as http from "http";
 interface RuntimeInfo {
   port: number;
   livekit_url: string;
+  room?: string;
 }
 
 interface TokenResponse {
   token: string;
   url: string;
+  room: string;
 }
 
 export function readRuntimeInfo(breakdownDir: string): RuntimeInfo | null {
@@ -23,10 +25,10 @@ export function readRuntimeInfo(breakdownDir: string): RuntimeInfo | null {
   }
 }
 
-export async function getToken(port: number, room: string): Promise<TokenResponse> {
+export async function getToken(port: number): Promise<TokenResponse> {
   return new Promise((resolve, reject) => {
     const req = http.get(
-      `http://127.0.0.1:${port}/token?room=${encodeURIComponent(room)}`,
+      `http://127.0.0.1:${port}/token`,
       (res) => {
         let body = "";
         res.on("data", (chunk: Buffer) => { body += chunk.toString(); });
@@ -53,7 +55,6 @@ export async function getToken(port: number, room: string): Promise<TokenRespons
 
 export async function getTokenWithRetry(
   breakdownDir: string,
-  room: string,
   maxAttempts = 10,
   delayMs = 500,
 ): Promise<TokenResponse> {
@@ -61,7 +62,7 @@ export async function getTokenWithRetry(
     const info = readRuntimeInfo(breakdownDir);
     if (info) {
       try {
-        return await getToken(info.port, room);
+        return await getToken(info.port);
       } catch {
         // server not ready yet
       }

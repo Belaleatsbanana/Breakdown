@@ -1,6 +1,5 @@
 // clients/vscode/extension-host/src/commands.ts
 import * as vscode from "vscode";
-import * as crypto from "crypto";
 import * as path from "path";
 import { getToken, getTokenWithRetry, readRuntimeInfo } from "./token_client";
 import { ProcessManager } from "./process_manager";
@@ -16,11 +15,6 @@ function workspaceRoot(): string | null {
   }
   // multi-root: pick first; future enhancement to prompt
   return folders[0].uri.fsPath;
-}
-
-function roomName(wsRoot: string): string {
-  const hash = crypto.createHash("sha256").update(wsRoot).digest("hex").slice(0, 12);
-  return `breakdown-${hash}`;
 }
 
 function activeLineInfo(): { file: string; line: number } | null {
@@ -50,7 +44,6 @@ export function registerCommands(
         return;
       }
       const breakdownDir = path.join(root, ".breakdown");
-      const room = roomName(root);
 
       // Only spawn a new agent if one isn't already responding.
       // Spawning when a server exists overwrites runtime.json with a new port
@@ -59,7 +52,7 @@ export function registerCommands(
       let alreadyRunning = false;
       if (existing) {
         try {
-          await getToken(existing.port, room);
+          await getToken(existing.port);
           alreadyRunning = true;
         } catch {
           // not running — fall through to spawn
@@ -71,7 +64,7 @@ export function registerCommands(
 
       try {
         // 20 attempts × 500 ms = 10 s, enough for a cold agent start (~8 s)
-        const { token, url } = await getTokenWithRetry(breakdownDir, room, 20, 500);
+        const { token, url, room } = await getTokenWithRetry(breakdownDir, 20, 500);
         webviewManager.show(token, url, room);
       } catch (err) {
         vscode.window.showErrorMessage(`Breakdown: ${String(err)}`);

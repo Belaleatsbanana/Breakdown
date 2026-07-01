@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import json
+import secrets
 import socket
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import urlparse
 
 from loguru import logger
 
@@ -24,10 +25,10 @@ def find_free_port(start: int) -> int:
     raise RuntimeError(f"No free port found starting from {start}")
 
 
-def write_runtime_info(port: int, livekit_url: str, breakdown_dir: Path) -> None:
+def write_runtime_info(port: int, livekit_url: str, room: str, breakdown_dir: Path) -> None:
     breakdown_dir.mkdir(parents=True, exist_ok=True)
     tmp = breakdown_dir / "runtime.json.tmp"
-    tmp.write_text(json.dumps({"port": port, "livekit_url": livekit_url}))
+    tmp.write_text(json.dumps({"port": port, "livekit_url": livekit_url, "room": room}))
     tmp.replace(breakdown_dir / "runtime.json")
 
 
@@ -35,7 +36,7 @@ def _make_token(api_key: str, api_secret: str, room: str) -> str:
     from livekit.api import AccessToken, VideoGrants  # type: ignore[import-untyped]
     token = (
         AccessToken(api_key, api_secret)
-        .with_identity("agent")
+        .with_identity("user")
         .with_grants(VideoGrants(room_join=True, room=room))
         .to_jwt()
     )
@@ -46,13 +47,17 @@ class TokenServer:
     def __init__(self, settings: Settings, breakdown_dir: Path) -> None:
         self._settings = settings
         self._breakdown_dir = breakdown_dir
+        # Unique room per agent process — ensures a fresh room for each start,
+        # which guarantees livekit-server triggers auto-dispatch for the first joiner.
+        self._room = f"breakdown-{secrets.token_hex(6)}"
 
     def start(self, port: int | None = None) -> None:
         if port is None:
             port = find_free_port(self._settings.token_server_port_start)
-        write_runtime_info(port, self._settings.livekit_url, self._breakdown_dir)
+        write_runtime_info(port, self._settings.livekit_url, self._room, self._breakdown_dir)
 
         settings = self._settings
+        room = self._room
 
         class _Handler(BaseHTTPRequestHandler):
             def do_GET(self) -> None:
@@ -61,15 +66,13 @@ class TokenServer:
                     self.send_response(404)
                     self.end_headers()
                     return
-                params = parse_qs(parsed.query)
-                room = params.get("room", ["default"])[0]
                 try:
                     token = _make_token(
                         settings.livekit_api_key,
                         settings.livekit_api_secret,
                         room,
                     )
-                    body = json.dumps({"token": token, "url": settings.livekit_url}).encode()
+                    body = json.dumps({"token": token, "url": settings.livekit_url, "room": room}).encode()
                     self.send_response(200)
                     self.send_header("Content-Type", "application/json")
                     self.send_header("Content-Length", str(len(body)))
