@@ -8,6 +8,10 @@ dist/
 
 # Runtime state
 .breakdown/
+.superpowers/
+
+# VS Code extension build artifacts
+*.vsix
 
 # Secrets
 .env
