@@ -27,6 +27,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+gemini-embeddings = [
+    "google-genai>=0.3",
+]
 local-embeddings = [
     "sentence-transformers>=3.0",
     "torch>=2.3",

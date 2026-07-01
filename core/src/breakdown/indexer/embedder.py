@@ -18,10 +18,12 @@ def create_embedder(provider: str, settings: Settings) -> Embedder:
             api_key=settings.openai_api_key,
             model="text-embedding-3-small",
         )
+    if provider == "gemini":
+        return _GeminiEmbedder(api_key=settings.gemini_api_key)
     if provider == "local":
         return _LocalEmbedder()
     raise ValueError(
-        f"Unknown embedding provider: {provider!r}. Choose 'openai' or 'local'."
+        f"Unknown embedding provider: {provider!r}. Choose 'openai', 'gemini', or 'local'."
     )
 
 
@@ -40,6 +42,24 @@ class _OpenAIEmbedder:
             batch = texts[i : i + 100]
             response = self._client.embeddings.create(input=batch, model=self._model)
             results.extend(item.embedding for item in response.data)
+        return results
+
+
+class _GeminiEmbedder:
+    def __init__(self, api_key: str) -> None:
+        from google import genai  # type: ignore[import-untyped]
+        self._client = genai.Client(api_key=api_key)
+        self._model = "gemini-embedding-001"
+
+    def embed(self, texts: list[str]) -> list[list[float]]:
+        if not texts:
+            return []
+        # batch in groups of 100, matching the OpenAI embedder's batching
+        results: list[list[float]] = []
+        for i in range(0, len(texts), 100):
+            batch = texts[i : i + 100]
+            response = self._client.models.embed_content(model=self._model, contents=batch)
+            results.extend(embedding.values for embedding in response.embeddings)
         return results
 
 
