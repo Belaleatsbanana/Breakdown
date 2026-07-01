@@ -40,6 +40,8 @@ export class LiveKitRoom {
           this._send({ type: "transcript", text: msg.text, final: msg.final });
         } else if (msg.type === "status") {
           this._send({ type: "status", state: msg.state });
+        } else if (msg.type === "position") {
+          this._send({ type: "position", file: msg.file, line: msg.line });
         }
       } catch {
         // ignore malformed packets

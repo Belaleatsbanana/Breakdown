@@ -16,4 +16,5 @@ export type WebviewToHost =
   | { type: "disconnected"; reason: string }
   | { type: "error"; message: string }
   | { type: "transcript"; text: string; final: boolean }
-  | { type: "status"; state: "idle" | "explaining" | "listening" | "interrupted" };
+  | { type: "status"; state: "idle" | "explaining" | "listening" | "interrupted" }
+  | { type: "position"; file: string; line: number };
