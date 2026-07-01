@@ -10,8 +10,11 @@ These are intentional. Do not "simplify" them.
   The dependency is one-directional: agent imports session.
 - `agent.py` must stay under 150 lines. If it grows beyond that, the new
   logic belongs in a dedicated module, not inlined.
-- The provider factory functions (`create_llm`, `create_tts`, `create_stt`)
-  are thin adapters. Do not merge them or move logic into the agent.
+- The provider factory functions (`create_llm`, `create_tts`) are thin
+  adapters. Do not merge them or move logic into the agent. There is no
+  STT provider -- voice input was removed (VS Code webviews cannot grant
+  microphone permission); the agent takes typed questions via the `ask`
+  DataPacket instead.
 - `chunker.py`, `parser.py`, `embedder.py`, `store.py` are four separate
   modules with single responsibilities. Do not merge them.
 - The Webview and extension host are separate TypeScript compilation targets

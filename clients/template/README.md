@@ -11,7 +11,9 @@ Breakdown Python core. You do not need to understand the core internals.
 4. Send DataPackets to the agent (commands).
 5. Receive DataPackets from the agent (status, position, transcript, error).
 6. Play the TTS audio track published by the agent (via the platform's audio API).
-7. Optionally capture mic audio and publish it as a track for STT.
+7. Send typed questions via the `ask` packet. There is no voice input in this
+   protocol -- most platform webviews have no supported mechanism for granting
+   microphone permission, so all client-to-agent questions are typed text.
 
 ## Room Name
 
@@ -31,6 +33,7 @@ All packets are JSON with envelope: `{ "v": 1, "type": "<type>", ...fields }`
 | type | required fields | meaning |
 |---|---|---|
 | `explain` | `file` (string, relative path), `line` (integer, 1-indexed) | Explain this line |
+| `ask` | `text` (string) | Ask a typed question |
 | `next` | none | Move to next line |
 | `prev` | none | Move to previous line |
 | `stop` | none | End the session |
@@ -41,7 +44,7 @@ All packets are JSON with envelope: `{ "v": 1, "type": "<type>", ...fields }`
 |---|---|---|
 | `status` | `state`: `"idle"/"explaining"/"listening"/"interrupted"` | State changed |
 | `position` | `file` (string), `line` (integer) | Current position updated |
-| `transcript` | `text` (string), `final` (boolean) | STT result (partial or final) |
+| `transcript` | `text` (string), `final` (boolean) | Live transcript of the agent's spoken reply (partial or final) |
 | `error` | `code` (string), `message` (string), `recoverable` (boolean), `retry_after_ms` (integer) | Error occurred |
 
 ### Error Codes
@@ -50,7 +53,6 @@ All packets are JSON with envelope: `{ "v": 1, "type": "<type>", ...fields }`
 |---|---|---|
 | `PROVIDER_RATE_LIMITED` | API rate limit hit | true |
 | `INDEX_EMPTY` | No index found; run `breakdown index` | false |
-| `STT_FAILED` | Speech transcription failed | true |
 | `ROOM_DISCONNECTED` | LiveKit room connection lost | true |
 
 ## Important Rules
@@ -65,6 +67,7 @@ All packets are JSON with envelope: `{ "v": 1, "type": "<type>", ...fields }`
 - [ ] Read runtime.json and get token
 - [ ] Connect to LiveKit room
 - [ ] Send `explain` packet on line selection
+- [ ] Send `ask` packet for typed questions
 - [ ] Send `next` / `prev` on navigation
 - [ ] Receive and display `status` updates
 - [ ] Play the agent's audio track

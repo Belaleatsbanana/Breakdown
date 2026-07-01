@@ -45,6 +45,18 @@ If `v` is not `1`, show an error and ask the user to update Breakdown.
 { "v": 1, "type": "prev" }
 ```
 
+### ask
+
+```json
+{ "v": 1, "type": "ask", "text": "why does this retry on failure?" }
+```
+
+Sends a typed question to the agent. The agent replies via TTS audio (and its
+transcript, see `transcript` below) using `AgentSession.generate_reply`. Voice
+input does not exist in this protocol -- VS Code webviews have no supported
+mechanism for granting microphone permission, so all client-to-agent
+questions are typed text, never audio.
+
 ### stop
 
 ```json
@@ -73,7 +85,11 @@ States: `idle`, `explaining`, `listening`, `interrupted`
 { "v": 1, "type": "transcript", "text": "what does this do", "final": true }
 ```
 
-`final: false` for partial STT results; `final: true` for the committed transcription.
+Live transcript of what the agent is speaking (its own reply to `explain` or
+`ask`), sourced from LiveKit's native transcription of the agent's TTS output.
+`final: false` for in-progress segments; `final: true` for the committed
+segment. There is no client-side (user) speech transcription in this
+protocol -- clients never send audio.
 
 ### error
 
@@ -88,7 +104,7 @@ States: `idle`, `explaining`, `listening`, `interrupted`
 }
 ```
 
-Error codes: `PROVIDER_RATE_LIMITED`, `INDEX_EMPTY`, `STT_FAILED`, `ROOM_DISCONNECTED`
+Error codes: `PROVIDER_RATE_LIMITED`, `INDEX_EMPTY`, `ROOM_DISCONNECTED`
 
 When `recoverable` is `true`, show a non-blocking notification and wait.
 When `recoverable` is `false`, show a blocking error and offer to restart the session.
