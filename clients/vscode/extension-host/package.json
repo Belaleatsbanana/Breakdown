@@ -20,14 +20,17 @@
       { "command": "breakdown.explainLine", "title": "Breakdown: Explain Line" },
       { "command": "breakdown.nextLine", "title": "Breakdown: Next Line" },
       { "command": "breakdown.prevLine", "title": "Breakdown: Previous Line" },
-      { "command": "breakdown.pushToTalk", "title": "Breakdown: Push to Talk" }
+      { "command": "breakdown.pushToTalk", "title": "Breakdown: Push to Talk" },
+      { "command": "breakdown.dismissInlineStrip", "title": "Breakdown: Dismiss Inline Strip" }
     ],
     "keybindings": [
       { "command": "breakdown.startSession", "key": "ctrl+k ctrl+e", "mac": "cmd+k cmd+e" },
+      { "command": "breakdown.explainLine",   "key": "ctrl+alt+i", "mac": "cmd+alt+i" },
       { "command": "breakdown.nextLine",     "key": "ctrl+k ctrl+n", "mac": "cmd+k cmd+n" },
       { "command": "breakdown.prevLine",     "key": "ctrl+k ctrl+p", "mac": "cmd+k cmd+p" },
       { "command": "breakdown.pushToTalk",   "key": "ctrl+k ctrl+space", "mac": "cmd+k cmd+space" },
-      { "command": "breakdown.stopSession",  "key": "ctrl+k ctrl+q", "mac": "cmd+k cmd+q" }
+      { "command": "breakdown.stopSession",  "key": "ctrl+k ctrl+q", "mac": "cmd+k cmd+q" },
+      { "command": "breakdown.dismissInlineStrip", "key": "escape", "mac": "escape", "when": "breakdown.stripVisible" }
     ]
   },
   "scripts": {

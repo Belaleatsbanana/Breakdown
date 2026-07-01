@@ -2,12 +2,16 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import type { HostToWebview, WebviewToHost } from "./message_types";
+import type { InlineStripManager } from "./inline_strip_manager";
 
 export class WebviewManager {
   private _panel: vscode.WebviewPanel | null = null;
   private _statusBar: vscode.StatusBarItem;
 
-  constructor(private readonly _context: vscode.ExtensionContext) {
+  constructor(
+    private readonly _context: vscode.ExtensionContext,
+    private readonly _inlineStrip: InlineStripManager,
+  ) {
     this._statusBar = vscode.window.createStatusBarItem(
       vscode.StatusBarAlignment.Right,
       100,
@@ -19,19 +23,21 @@ export class WebviewManager {
 
   show(token: string, url: string, room: string): void {
     if (this._panel) {
-      // Reconnect with new credentials rather than reusing stale ones
+      // Reconnect with new credentials rather than reusing stale ones.
+      // Deliberately does not call .reveal() — this panel is a background
+      // audio engine, never the visible UI.
       this.send({ type: "disconnect" });
       this.send({ type: "connect", token, url, room });
-      this._panel.reveal();
       return;
     }
 
     this._panel = vscode.window.createWebviewPanel(
       "breakdown",
-      "Breakdown",
+      "Breakdown Engine",
       { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true },
       {
         enableScripts: true,
+        retainContextWhenHidden: true,
         localResourceRoots: [
           vscode.Uri.file(path.join(this._context.extensionPath, "dist")),
         ],
@@ -55,7 +61,7 @@ export class WebviewManager {
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="Content-Security-Policy" content="${csp}">
-  <title>Breakdown</title>
+  <title>Breakdown Engine</title>
 </head>
 <body>
 <script nonce="${nonce}" src="${webviewScriptUri}"></script>
@@ -67,6 +73,11 @@ export class WebviewManager {
         this.send({ type: "connect", token, url, room });
       } else if (msg.type === "status") {
         this._statusBar.text = `$(unmute) Breakdown: ${msg.state}`;
+        this._inlineStrip.updateStatus(msg.state);
+      } else if (msg.type === "transcript") {
+        this._inlineStrip.updateTranscript(msg.text);
+      } else if (msg.type === "position") {
+        this._inlineStrip.moveTo(msg.line);
       } else if (msg.type === "error") {
         vscode.window.showErrorMessage(`Breakdown: ${msg.message}`);
       }

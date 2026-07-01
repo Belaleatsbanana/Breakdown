@@ -4,6 +4,7 @@ import * as path from "path";
 import { getToken, getTokenWithRetry, readRuntimeInfo } from "./token_client";
 import { ProcessManager } from "./process_manager";
 import { WebviewManager } from "./webview_manager";
+import type { InlineStripManager } from "./inline_strip_manager";
 
 function workspaceRoot(): string | null {
   const folders = vscode.workspace.workspaceFolders;
@@ -35,6 +36,7 @@ export function registerCommands(
   ctx: vscode.ExtensionContext,
   webviewManager: WebviewManager,
   processManager: ProcessManager,
+  inlineStripManager: InlineStripManager,
 ): vscode.Disposable[] {
   return [
     vscode.commands.registerCommand("breakdown.startSession", async () => {
@@ -73,12 +75,14 @@ export function registerCommands(
 
     vscode.commands.registerCommand("breakdown.stopSession", () => {
       webviewManager.send({ type: "disconnect" });
+      inlineStripManager.dismiss();
       processManager.stop();
     }),
 
     vscode.commands.registerCommand("breakdown.explainLine", () => {
       const info = activeLineInfo();
       if (!info) { return; }
+      inlineStripManager.show(info.line);
       webviewManager.send({ type: "send_data", payload: { type: "explain", ...info } });
     }),
 
@@ -94,6 +98,10 @@ export function registerCommands(
       // Push-to-talk is handled entirely in the webview via keyboard events.
       // This command is registered so the keybinding appears in the keybindings UI.
       webviewManager.send({ type: "send_data", payload: { type: "push_to_talk_start" } });
+    }),
+
+    vscode.commands.registerCommand("breakdown.dismissInlineStrip", () => {
+      inlineStripManager.dismiss();
     }),
   ];
 }
