@@ -44,8 +44,9 @@ class Settings(BaseSettings):
     deepgram_api_key: str = ""
 
     # Embeddings
-    embedding_provider: Literal["openai", "gemini", "local"] = "openai"
+    embedding_provider: Literal["openai", "gemini", "jina", "local"] = "openai"
     gemini_api_key: str = ""
+    jina_api_key: str = ""
 
     # Index
     index_backend: Literal["lancedb", "chromadb"] = "lancedb"

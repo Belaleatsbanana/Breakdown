@@ -23,10 +23,12 @@ def create_embedder(provider: str, settings: Settings) -> Embedder:
         )
     if provider == "gemini":
         return _GeminiEmbedder(api_key=settings.gemini_api_key)
+    if provider == "jina":
+        return _JinaEmbedder(api_key=settings.jina_api_key)
     if provider == "local":
         return _LocalEmbedder()
     raise ValueError(
-        f"Unknown embedding provider: {provider!r}. Choose 'openai', 'gemini', or 'local'."
+        f"Unknown embedding provider: {provider!r}. Choose 'openai', 'gemini', 'jina', or 'local'."
     )
 
 
@@ -96,6 +98,53 @@ class _GeminiEmbedder:
                     "'local' in .env."
                 )
             raise
+
+
+class _JinaEmbedder:
+    def __init__(self, api_key: str) -> None:
+        self._api_key = api_key
+        self._model = "jina-embeddings-v3"
+
+    def embed(self, texts: list[str]) -> list[list[float]]:
+        if not texts:
+            return []
+        # batch in groups of 100, matching the other embedders' batching
+        results: list[list[float]] = []
+        for i in range(0, len(texts), 100):
+            batch = texts[i : i + 100]
+            results.extend(self._embed_batch(batch))
+        return results
+
+    def _embed_batch(self, batch: list[str]) -> list[list[float]]:
+        import time
+
+        import httpx
+
+        wait_seconds = 2.0
+        max_attempts = 5
+        for attempt in range(1, max_attempts + 1):
+            response = httpx.post(
+                "https://api.jina.ai/v1/embeddings",
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {self._api_key}",
+                },
+                json={"input": batch, "model": self._model, "task": "retrieval.passage"},
+                timeout=30.0,
+            )
+            if response.status_code == 429 and attempt < max_attempts:
+                logger.warning(
+                    "Jina embedding rate limited, retrying in {:.0f}s (attempt {}/{})",
+                    wait_seconds,
+                    attempt,
+                    max_attempts,
+                )
+                time.sleep(wait_seconds)
+                wait_seconds *= 2
+                continue
+            response.raise_for_status()
+            return [item["embedding"] for item in response.json()["data"]]
+        raise RuntimeError("Jina embedding request failed after retries")
 
 
 class _LocalEmbedder:
