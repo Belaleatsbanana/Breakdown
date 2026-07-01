@@ -50,27 +50,42 @@ def index(
         if f.is_file() and not ignore.is_ignored(f)
     ]
 
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        console=console,
-    ) as progress:
-        task = progress.add_task(f"Indexing {len(files)} files...", total=len(files))
-        for file in files:
-            if not manifest.is_stale(file):
+    failed_files: list[str] = []
+    try:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+        ) as progress:
+            task = progress.add_task(f"Indexing {len(files)} files...", total=len(files))
+            for file in files:
+                if not manifest.is_stale(file):
+                    progress.advance(task)
+                    continue
+                rel = str(file.relative_to(path))
+                try:
+                    tree, source = parse_file(file, registry)
+                    chunks = chunk_tree(tree, source, rel, settings.context_window_lines)
+                    if chunks:
+                        embeddings = embedder.embed([c.text for c in chunks])
+                        ids = store.add(chunks, embeddings)
+                        manifest.update(file, ids)
+                except Exception as e:
+                    logger.warning("Failed to index {}: {}; skipping", rel, e)
+                    failed_files.append(rel)
                 progress.advance(task)
-                continue
-            tree, source = parse_file(file, registry)
-            rel = str(file.relative_to(path))
-            chunks = chunk_tree(tree, source, rel, settings.context_window_lines)
-            if chunks:
-                embeddings = embedder.embed([c.text for c in chunks])
-                ids = store.add(chunks, embeddings)
-                manifest.update(file, ids)
-            progress.advance(task)
+    finally:
+        # Always persist whatever progress was made, even if indexing was
+        # interrupted by a persistent failure (e.g. an exhausted rate limit) --
+        # otherwise the next run re-indexes everything from scratch.
+        manifest.save()
+        store.close()
 
-    manifest.save()
-    store.close()
+    if failed_files:
+        console.print(
+            f"[yellow]Index complete with {len(failed_files)} failure(s):[/yellow] "
+            f"{', '.join(failed_files)}"
+        )
     console.print(f"[green]Index complete.[/green] {len(files)} files processed.")
 
 
