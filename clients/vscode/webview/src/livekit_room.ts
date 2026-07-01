@@ -63,10 +63,6 @@ export class LiveKitRoom {
     await this._room.localParticipant.publishData(data, { reliable: true });
   }
 
-  async publishMicTrack(track: MediaStreamTrack): Promise<void> {
-    await this._room.localParticipant.publishTrack(track);
-  }
-
   async disconnect(): Promise<void> {
     await this._room.disconnect();
     this._player.stop();
