@@ -56,7 +56,8 @@ Unchanged at the protocol level:
 - **Modify:** `clients/vscode/extension-host/src/commands.ts` (register `Ctrl+Alt+I` trigger, wire `explainLine` to also show the strip, register `Escape`-gated dismiss command)
 - **Modify:** `clients/vscode/extension-host/src/webview_manager.ts` (drop visible-panel HTML/CSP, keep background-panel creation + message routing)
 - **Modify:** `clients/vscode/extension-host/package.json` (add `breakdown.dismissInlineStrip` command, `ctrl+alt+i` keybinding with `mac: cmd+alt+i`, `escape` keybinding scoped to `when: breakdown.stripVisible`)
-- **No changes** to `clients/vscode/webview/src/*` (audio engine internals untouched) or `core/` (protocol and agent untouched).
+- **Modify:** `clients/vscode/webview/src/message_bridge.ts`, `clients/vscode/webview/src/livekit_room.ts` — the agent already publishes a `position` data-channel message on `next`/`prev` (`core/src/breakdown/agent.py`), but `livekit_room.ts`'s `DataReceived` handler only recognizes `transcript`/`status` today and silently drops it. Forwarding `position` is required for the strip to follow `nextLine`/`prevLine` navigation. Audio engine internals (mic capture, playback, connection handling) are otherwise untouched.
+- **No changes** to `core/` (protocol and agent untouched) — the agent already emits everything this feature needs.
 
 ## Testing
 
