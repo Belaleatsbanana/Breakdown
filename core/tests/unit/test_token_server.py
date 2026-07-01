@@ -21,10 +21,11 @@ def test_find_free_port_returns_usable_port() -> None:
 
 
 def test_write_runtime_info(tmp_path: Path) -> None:
-    write_runtime_info(7890, "ws://localhost:7880", tmp_path)
+    write_runtime_info(7890, "ws://localhost:7880", "breakdown-abc123", tmp_path)
     data = json.loads((tmp_path / "runtime.json").read_text())
     assert data["port"] == 7890
     assert data["livekit_url"] == "ws://localhost:7880"
+    assert data["room"] == "breakdown-abc123"
 
 
 def test_token_server_responds_to_token_request(tmp_path: Path) -> None:
