@@ -17,6 +17,11 @@ bridge.onMessage(async (msg: HostToWebview) => {
       const track = await mic.start();
       if (track) {
         await room.publishMicTrack(track);
+      } else {
+        bridge.send({
+          type: "error",
+          message: "Microphone access failed or was denied. Voice input will not work until this is granted.",
+        });
       }
     } catch (err) {
       bridge.send({ type: "error", message: String(err) });

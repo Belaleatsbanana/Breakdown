@@ -5,17 +5,12 @@ export class MicCapture {
   private _track: MediaStreamTrack | null = null;
 
   async start(): Promise<MediaStreamTrack | null> {
-    try {
-      this._stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true },
-        video: false,
-      });
-      this._track = this._stream.getAudioTracks()[0] ?? null;
-      return this._track;
-    } catch (err) {
-      console.error("Mic access denied:", err);
-      return null;
-    }
+    this._stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true },
+      video: false,
+    });
+    this._track = this._stream.getAudioTracks()[0] ?? null;
+    return this._track;
   }
 
   stop(): void {
