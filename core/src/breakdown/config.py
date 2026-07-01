@@ -38,9 +38,6 @@ class Settings(BaseSettings):
     elevenlabs_api_key: str = ""
     elevenlabs_voice_id: str = "Rachel"
     deepgram_tts_model: str = "aura-2-andromeda-en"
-
-    # STT
-    stt_provider: Literal["openai", "deepgram"] = "openai"
     deepgram_api_key: str = ""
 
     # Embeddings

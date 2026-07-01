@@ -12,7 +12,6 @@ from loguru import logger
 from breakdown.config import Settings, get_settings
 from breakdown.indexer.store import VectorStore, create_store
 from breakdown.providers.llm import create_llm
-from breakdown.providers.stt import create_stt
 from breakdown.providers.tts import create_tts
 from breakdown.session import Session
 
@@ -76,8 +75,7 @@ async def entrypoint(ctx: agents.JobContext) -> None:
 
     llm = create_llm(settings)
     tts = create_tts(settings)
-    stt = create_stt(settings)
-    agent_session = AgentSession(llm=llm, tts=tts, stt=stt)  # type: ignore[arg-type]
+    agent_session = AgentSession(llm=llm, tts=tts)  # type: ignore[arg-type]
 
     async def _handle_data(packet: object) -> None:
         try:
@@ -106,10 +104,17 @@ async def entrypoint(ctx: agents.JobContext) -> None:
             session.add_turn("user", f"Explain line {session.current_line}: {target_line}")
             session.save(session_path)
 
+        elif msg_type == "ask":
+            text = str(msg.get("text", ""))
+            if text:
+                session.add_turn("user", text)
+                await agent_session.generate_reply(user_input=text)  # type: ignore[attr-defined]
+                session.save(session_path)
+
         elif msg_type == "next":
             session.current_line += 1
             payload = json.dumps(
-                {"v": 1, "type": "position", "file": session.current_file, "line": session.current_line}
+                {"v": 1, "type": "position", "file": session.current_file, "line": session.current_line}  # noqa: E501
             ).encode()
             await ctx.room.local_participant.publish_data(payload)  # type: ignore[attr-defined]
             session.save(session_path)
@@ -117,7 +122,7 @@ async def entrypoint(ctx: agents.JobContext) -> None:
         elif msg_type == "prev":
             session.current_line = max(1, session.current_line - 1)
             payload = json.dumps(
-                {"v": 1, "type": "position", "file": session.current_file, "line": session.current_line}
+                {"v": 1, "type": "position", "file": session.current_file, "line": session.current_line}  # noqa: E501
             ).encode()
             await ctx.room.local_participant.publish_data(payload)  # type: ignore[attr-defined]
             session.save(session_path)
@@ -127,7 +132,7 @@ async def entrypoint(ctx: agents.JobContext) -> None:
 
     # room.on() requires a sync callback; schedule the async work as a task.
     def on_data(packet: object) -> None:
-        asyncio.create_task(_handle_data(packet))
+        asyncio.create_task(_handle_data(packet))  # noqa: RUF006
 
     ctx.room.on("data_received", on_data)  # type: ignore[attr-defined]
     await agent_session.start(  # type: ignore[attr-defined]

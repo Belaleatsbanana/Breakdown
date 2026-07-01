@@ -29,3 +29,8 @@ def test_settings_context_window_lines_default() -> None:
 def test_settings_history_budget_pct_default() -> None:
     s = Settings()
     assert s.history_budget_pct == 0.8
+
+
+def test_settings_has_no_stt_provider() -> None:
+    s = Settings()
+    assert not hasattr(s, "stt_provider")
