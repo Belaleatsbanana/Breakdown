@@ -82,6 +82,12 @@ export function registerCommands(
     vscode.commands.registerCommand("breakdown.explainLine", () => {
       const info = activeLineInfo();
       if (!info) { return; }
+      if (!webviewManager.isConnected()) {
+        vscode.window.showErrorMessage(
+          "Breakdown: start a session first (Ctrl+K Ctrl+E / Cmd+K Cmd+E).",
+        );
+        return;
+      }
       inlineStripManager.show(info.line);
       webviewManager.send({ type: "send_data", payload: { type: "explain", ...info } });
     }),

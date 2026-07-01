@@ -93,6 +93,10 @@ export class WebviewManager {
     this._panel?.webview.postMessage(msg);
   }
 
+  isConnected(): boolean {
+    return this._panel !== null;
+  }
+
   dispose(): void {
     this._panel?.dispose();
     this._statusBar.dispose();

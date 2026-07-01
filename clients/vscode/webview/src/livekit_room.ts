@@ -48,6 +48,12 @@ export class LiveKitRoom {
       }
     });
 
+    this._room.on(RoomEvent.TranscriptionReceived, (segments) => {
+      for (const segment of segments) {
+        this._send({ type: "transcript", text: segment.text, final: segment.final });
+      }
+    });
+
     await this._room.connect(url, token);
     this._send({ type: "connected", participantId: this._room.localParticipant.sid });
   }

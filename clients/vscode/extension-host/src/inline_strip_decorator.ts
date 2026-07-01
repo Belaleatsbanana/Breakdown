@@ -17,11 +17,14 @@ export class DecorationHostAdapter implements StripDecorator {
   }
 
   setDecoration(line: number, text: string): void {
-    const editor = vscode.window.activeTextEditor;
-    if (!editor) {
-      return;
+    if (!this._activeEditor) {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor) {
+        return;
+      }
+      this._activeEditor = editor;
     }
-    this._activeEditor = editor;
+    const editor = this._activeEditor;
     const zeroBasedLine = Math.min(Math.max(line - 1, 0), editor.document.lineCount - 1);
     const lineRange = editor.document.lineAt(zeroBasedLine).range;
     editor.setDecorations(this._decorationType, [
