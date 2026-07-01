@@ -25,7 +25,7 @@ _EXT_TO_LANGUAGE: dict[str, str] = {
     ".h": "c",
     ".hpp": "cpp",
     ".rb": "ruby",
-    ".cs": "c_sharp",
+    ".cs": "csharp",
     ".php": "php",
     ".swift": "swift",
     ".kt": "kotlin",
@@ -51,14 +51,14 @@ class LanguageRegistry:
             return _LANGUAGE_CACHE[lang_name]
 
         try:
-            from tree_sitter_languages import (  # type: ignore[import-untyped]
+            from tree_sitter_language_pack import (  # type: ignore[import-untyped]
                 get_language,
             )
 
             lang: object | None = get_language(lang_name)  # type: ignore[assignment,call-arg,return-value]
             _LANGUAGE_CACHE[lang_name] = lang
             return lang
-        except Exception:
-            logger.debug("No grammar for {}", path.suffix)
+        except Exception as e:
+            logger.warning("No grammar for {}: {}", path.suffix, e)
             _LANGUAGE_CACHE[lang_name] = None
             return None

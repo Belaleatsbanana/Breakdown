@@ -29,8 +29,7 @@ def parse_file(
         return None, source
 
     try:
-        parser = Parser()  # type: ignore[call-arg]
-        parser.set_language(language)  # type: ignore[attr-defined]
+        parser = Parser(language)  # type: ignore[call-arg]
         tree = parser.parse(source)  # type: ignore[union-attr]
         return tree, source
     except Exception as e:

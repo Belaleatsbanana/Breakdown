@@ -7,8 +7,8 @@ import pytest
 
 
 @pytest.fixture(autouse=True)
-def mock_tree_sitter_languages() -> Iterator[None]:
-    """Mock tree-sitter-languages to avoid environment-specific ABI issues."""
+def mock_tree_sitter_language_pack() -> Iterator[None]:
+    """Mock tree-sitter-language-pack to avoid environment-specific ABI issues."""
 
     class MockLanguage:
         def __init__(self, name: str) -> None:
@@ -26,10 +26,7 @@ def mock_tree_sitter_languages() -> Iterator[None]:
             return MockNode()
 
     class MockParser:
-        def __init__(self) -> None:
-            self._language: object | None = None
-
-        def set_language(self, language: object) -> None:
+        def __init__(self, language: object | None = None) -> None:
             self._language = language
 
         def parse(self, source: bytes) -> object | None:
@@ -40,13 +37,13 @@ def mock_tree_sitter_languages() -> Iterator[None]:
     def mock_get_language(lang_name: str) -> object:
         supported = {
             "python", "javascript", "typescript", "tsx", "go", "rust",
-            "java", "c", "cpp", "ruby", "c_sharp", "php", "swift",
+            "java", "c", "cpp", "ruby", "csharp", "php", "swift",
             "kotlin", "scala", "lua", "bash",
         }
         if lang_name in supported:
             return MockLanguage(lang_name)
         raise ImportError(f"No grammar for {lang_name}")
 
-    with mock.patch("tree_sitter_languages.get_language", side_effect=mock_get_language):
+    with mock.patch("tree_sitter_language_pack.get_language", side_effect=mock_get_language):
         with mock.patch("breakdown.indexer.parser.Parser", MockParser):
             yield
