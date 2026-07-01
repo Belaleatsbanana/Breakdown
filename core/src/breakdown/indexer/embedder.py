@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-from typing import Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 from loguru import logger
 
 from breakdown.config import Settings
+
+if TYPE_CHECKING:
+    from google.genai.types import EmbedContentResponse  # type: ignore[import-untyped]
 
 
 @runtime_checkable
@@ -58,9 +61,41 @@ class _GeminiEmbedder:
         results: list[list[float]] = []
         for i in range(0, len(texts), 100):
             batch = texts[i : i + 100]
-            response = self._client.models.embed_content(model=self._model, contents=batch)
-            results.extend(embedding.values for embedding in response.embeddings)
+            response = self._embed_batch(batch)
+            if response.embeddings is None:
+                raise RuntimeError("Gemini embedding response contained no embeddings")
+            for embedding in response.embeddings:
+                if embedding.values is None:
+                    raise RuntimeError("Gemini embedding response contained an empty vector")
+                results.append(embedding.values)
         return results
+
+    def _embed_batch(self, batch: list[str]) -> EmbedContentResponse:
+        from google.genai import errors  # type: ignore[import-untyped]
+        from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
+
+        def _is_rate_limited(exc: BaseException) -> bool:
+            return isinstance(exc, errors.ClientError) and exc.code == 429
+
+        @retry(
+            retry=retry_if_exception(_is_rate_limited),
+            stop=stop_after_attempt(5),
+            wait=wait_exponential(multiplier=2, min=2, max=60),
+            reraise=True,
+        )
+        def _call() -> EmbedContentResponse:
+            return self._client.models.embed_content(model=self._model, contents=batch)
+
+        try:
+            return _call()
+        except errors.ClientError as e:
+            if e.code == 429:
+                logger.error(
+                    "Gemini embedding quota exhausted after retries. Check your usage/limits "
+                    "at https://ai.dev/rate-limit or switch EMBEDDING_PROVIDER to 'openai' or "
+                    "'local' in .env."
+                )
+            raise
 
 
 class _LocalEmbedder:

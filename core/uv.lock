@@ -359,6 +359,7 @@ dev = [
 ]
 gemini-embeddings = [
     { name = "google-genai" },
+    { name = "tenacity" },
 ]
 local-embeddings = [
     { name = "sentence-transformers" },
@@ -384,6 +385,7 @@ requires-dist = [
     { name = "rich", specifier = ">=13.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.5" },
     { name = "sentence-transformers", marker = "extra == 'local-embeddings'", specifier = ">=3.0" },
+    { name = "tenacity", marker = "extra == 'gemini-embeddings'", specifier = ">=8.2" },
     { name = "tiktoken", specifier = ">=0.7" },
     { name = "torch", marker = "extra == 'local-embeddings'", specifier = ">=2.3" },
     { name = "tree-sitter", specifier = ">=0.23" },
