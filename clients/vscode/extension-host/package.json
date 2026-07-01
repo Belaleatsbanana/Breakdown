@@ -33,12 +33,16 @@
   "scripts": {
     "build": "node esbuild.host.config.js",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src --ext .ts"
+    "lint": "eslint src --ext .ts",
+    "test": "mocha --require ts-node/register --extension ts \"src/**/*.test.ts\""
   },
   "devDependencies": {
     "@types/node": "^18.0.0",
     "@types/vscode": "^1.85.0",
+    "@types/mocha": "^10.0.6",
     "esbuild": "^0.21.0",
+    "mocha": "^10.4.0",
+    "ts-node": "^10.9.2",
     "typescript": "^5.4.0"
   },
   "dependencies": {
