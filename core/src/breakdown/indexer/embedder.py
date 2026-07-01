@@ -101,9 +101,14 @@ class _GeminiEmbedder:
 
 
 class _JinaEmbedder:
+    # Jina's free tier is 100 requests/minute; pace requests under that
+    # proactively instead of only reacting to 429s after the fact.
+    _MIN_REQUEST_INTERVAL_SECONDS = 0.65
+
     def __init__(self, api_key: str) -> None:
         self._api_key = api_key
         self._model = "jina-embeddings-v3"
+        self._last_request_time = 0.0
 
     def embed(self, texts: list[str]) -> list[list[float]]:
         if not texts:
@@ -123,6 +128,10 @@ class _JinaEmbedder:
         wait_seconds = 2.0
         max_attempts = 5
         for attempt in range(1, max_attempts + 1):
+            elapsed = time.monotonic() - self._last_request_time
+            if elapsed < self._MIN_REQUEST_INTERVAL_SECONDS:
+                time.sleep(self._MIN_REQUEST_INTERVAL_SECONDS - elapsed)
+
             response = httpx.post(
                 "https://api.jina.ai/v1/embeddings",
                 headers={
@@ -132,16 +141,24 @@ class _JinaEmbedder:
                 json={"input": batch, "model": self._model, "task": "retrieval.passage"},
                 timeout=30.0,
             )
-            if response.status_code == 429 and attempt < max_attempts:
-                logger.warning(
-                    "Jina embedding rate limited, retrying in {:.0f}s (attempt {}/{})",
-                    wait_seconds,
-                    attempt,
-                    max_attempts,
+            self._last_request_time = time.monotonic()
+
+            if response.status_code == 429:
+                if attempt < max_attempts:
+                    logger.warning(
+                        "Jina embedding rate limited, retrying in {:.0f}s (attempt {}/{})",
+                        wait_seconds,
+                        attempt,
+                        max_attempts,
+                    )
+                    time.sleep(wait_seconds)
+                    wait_seconds *= 2
+                    continue
+                raise RuntimeError(
+                    "Jina embedding quota exhausted after retries. Check your usage/limits "
+                    "at https://jina.ai or switch EMBEDDING_PROVIDER to 'openai', 'gemini', "
+                    "or 'local' in .env."
                 )
-                time.sleep(wait_seconds)
-                wait_seconds *= 2
-                continue
             response.raise_for_status()
             return [item["embedding"] for item in response.json()["data"]]
         raise RuntimeError("Jina embedding request failed after retries")
