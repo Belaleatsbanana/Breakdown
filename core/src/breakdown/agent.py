@@ -131,7 +131,7 @@ async def entrypoint(ctx: agents.JobContext) -> None:
 
     ctx.room.on("data_received", on_data)  # type: ignore[attr-defined]
     await agent_session.start(  # type: ignore[attr-defined]
-        ctx.room,
         agent=Agent(instructions="You are a helpful code explainer."),
+        room=ctx.room,  # keyword-only in livekit-agents v1.6+
         room_input_options=RoomInputOptions(),
     )
