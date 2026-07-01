@@ -3,6 +3,7 @@ import type { StripDecorator } from "./inline_strip_manager";
 
 export class DecorationHostAdapter implements StripDecorator {
   private readonly _decorationType: vscode.TextEditorDecorationType;
+  private _activeEditor: vscode.TextEditor | null = null;
 
   constructor() {
     this._decorationType = vscode.window.createTextEditorDecorationType({
@@ -20,6 +21,7 @@ export class DecorationHostAdapter implements StripDecorator {
     if (!editor) {
       return;
     }
+    this._activeEditor = editor;
     const zeroBasedLine = Math.min(Math.max(line - 1, 0), editor.document.lineCount - 1);
     const lineRange = editor.document.lineAt(zeroBasedLine).range;
     editor.setDecorations(this._decorationType, [
@@ -28,7 +30,10 @@ export class DecorationHostAdapter implements StripDecorator {
   }
 
   clearDecoration(): void {
-    vscode.window.activeTextEditor?.setDecorations(this._decorationType, []);
+    if (this._activeEditor) {
+      this._activeEditor.setDecorations(this._decorationType, []);
+      this._activeEditor = null;
+    }
   }
 
   dispose(): void {
