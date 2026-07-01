@@ -100,10 +100,21 @@ export function registerCommands(
       webviewManager.send({ type: "send_data", payload: { type: "prev" } });
     }),
 
-    vscode.commands.registerCommand("breakdown.pushToTalk", () => {
-      // Push-to-talk is handled entirely in the webview via keyboard events.
-      // This command is registered so the keybinding appears in the keybindings UI.
-      webviewManager.send({ type: "send_data", payload: { type: "push_to_talk_start" } });
+    vscode.commands.registerCommand("breakdown.askQuestion", async () => {
+      if (!webviewManager.isConnected()) {
+        vscode.window.showErrorMessage(
+          "Breakdown: start a session first (Ctrl+K Ctrl+E / Cmd+K Cmd+E).",
+        );
+        return;
+      }
+      const text = await vscode.window.showInputBox({
+        prompt: "Ask Breakdown a question",
+        placeHolder: "e.g. Why does this function retry on failure?",
+      });
+      if (!text) {
+        return;
+      }
+      webviewManager.send({ type: "send_data", payload: { type: "ask", text } });
     }),
 
     vscode.commands.registerCommand("breakdown.dismissInlineStrip", () => {
