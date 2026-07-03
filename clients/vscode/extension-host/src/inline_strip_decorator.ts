@@ -10,8 +10,12 @@ export class DecorationHostAdapter implements StripDecorator {
       isWholeLine: true,
       after: {
         margin: "0 0 0 1em",
-        color: new vscode.ThemeColor("editorCodeLens.foreground"),
-        textDecoration: "none; display: block; opacity: 0.85;",
+        color: new vscode.ThemeColor("editorInfo.foreground"),
+        backgroundColor: new vscode.ThemeColor("editorInfo.background"),
+        // Deliberately inline (no display:block) — a block box here isn't
+        // given its own row by the editor's line grid, so it just overlaps
+        // whatever is rendered on the line below instead of pushing it down.
+        textDecoration: "none; padding: 0 0.4em; border-radius: 3px;",
       },
     });
   }
