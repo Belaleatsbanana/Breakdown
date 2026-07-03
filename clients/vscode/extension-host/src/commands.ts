@@ -3,7 +3,7 @@ import * as vscode from "vscode";
 import * as path from "path";
 import { getToken, getTokenWithRetry, readRuntimeInfo } from "./token_client";
 import { ProcessManager } from "./process_manager";
-import { WebviewManager } from "./webview_manager";
+import type { ChatViewProvider } from "./chat_view_provider";
 import type { InlineStripManager } from "./inline_strip_manager";
 
 function workspaceRoot(): string | null {
@@ -34,7 +34,7 @@ function activeLineInfo(): { file: string; line: number } | null {
 
 export function registerCommands(
   ctx: vscode.ExtensionContext,
-  webviewManager: WebviewManager,
+  chatView: ChatViewProvider,
   processManager: ProcessManager,
   inlineStripManager: InlineStripManager,
 ): vscode.Disposable[] {
@@ -67,14 +67,14 @@ export function registerCommands(
       try {
         // 20 attempts × 500 ms = 10 s, enough for a cold agent start (~8 s)
         const { token, url, room } = await getTokenWithRetry(breakdownDir, 20, 500);
-        webviewManager.show(token, url, room);
+        chatView.connect(token, url, room);
       } catch (err) {
         vscode.window.showErrorMessage(`Breakdown: ${String(err)}`);
       }
     }),
 
     vscode.commands.registerCommand("breakdown.stopSession", () => {
-      webviewManager.send({ type: "disconnect" });
+      chatView.send({ type: "disconnect" });
       inlineStripManager.dismiss();
       processManager.stop();
     }),
@@ -82,26 +82,26 @@ export function registerCommands(
     vscode.commands.registerCommand("breakdown.explainLine", () => {
       const info = activeLineInfo();
       if (!info) { return; }
-      if (!webviewManager.isConnected()) {
+      if (!chatView.isConnected()) {
         vscode.window.showErrorMessage(
           "Breakdown: start a session first (Ctrl+K Ctrl+E / Cmd+K Cmd+E).",
         );
         return;
       }
       inlineStripManager.show(info.line);
-      webviewManager.send({ type: "send_data", payload: { type: "explain", ...info } });
+      chatView.send({ type: "rpc", method: "explain", payload: info });
     }),
 
     vscode.commands.registerCommand("breakdown.nextLine", () => {
-      webviewManager.send({ type: "send_data", payload: { type: "next" } });
+      chatView.send({ type: "rpc", method: "next", payload: {} });
     }),
 
     vscode.commands.registerCommand("breakdown.prevLine", () => {
-      webviewManager.send({ type: "send_data", payload: { type: "prev" } });
+      chatView.send({ type: "rpc", method: "prev", payload: {} });
     }),
 
     vscode.commands.registerCommand("breakdown.askQuestion", async () => {
-      if (!webviewManager.isConnected()) {
+      if (!chatView.isConnected()) {
         vscode.window.showErrorMessage(
           "Breakdown: start a session first (Ctrl+K Ctrl+E / Cmd+K Cmd+E).",
         );
@@ -114,7 +114,7 @@ export function registerCommands(
       if (!text) {
         return;
       }
-      webviewManager.send({ type: "send_data", payload: { type: "ask", text } });
+      chatView.send({ type: "rpc", method: "ask", payload: { text } });
     }),
 
     vscode.commands.registerCommand("breakdown.dismissInlineStrip", () => {
