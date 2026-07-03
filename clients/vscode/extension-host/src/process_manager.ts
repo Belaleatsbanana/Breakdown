@@ -6,7 +6,7 @@ import { window } from "vscode";
 export class ProcessManager {
   private _process: cp.ChildProcess | null = null;
 
-  start(workspaceRoot: string): void {
+  start(workspaceRoot: string, extraEnv: NodeJS.ProcessEnv = {}): void {
     if (this._process) {
       return;
     }
@@ -17,7 +17,7 @@ export class ProcessManager {
     try {
       this._process = cp.spawn(cmd, args, {
         cwd: workspaceRoot,
-        env: { ...process.env },
+        env: { ...process.env, ...extraEnv },
         stdio: ["ignore", "pipe", "pipe"],
       });
 
