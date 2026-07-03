@@ -15,7 +15,6 @@ const CONTEXT_KEY = "breakdown.stripVisible";
 export class InlineStripManager {
   private _visibleLine: number | null = null;
   private _status: StripStatus = "explaining";
-  private _transcript = "";
 
   constructor(
     private readonly _decorator: StripDecorator,
@@ -33,7 +32,6 @@ export class InlineStripManager {
   show(line: number): void {
     this._visibleLine = line;
     this._status = "explaining";
-    this._transcript = "";
     this._setContext(CONTEXT_KEY, true);
     this._render();
   }
@@ -54,18 +52,9 @@ export class InlineStripManager {
     this._render();
   }
 
-  updateTranscript(text: string): void {
-    if (this._visibleLine === null) {
-      return;
-    }
-    this._transcript = text;
-    this._render();
-  }
-
   dismiss(): void {
     this._visibleLine = null;
     this._status = "explaining";
-    this._transcript = "";
     this._setContext(CONTEXT_KEY, false);
     this._decorator.clearDecoration();
   }
@@ -74,8 +63,6 @@ export class InlineStripManager {
     if (this._visibleLine === null) {
       return;
     }
-    const text =
-      this._transcript.length > 0 ? `${this._status}… ${this._transcript}` : `${this._status}…`;
-    this._decorator.setDecoration(this._visibleLine, text);
+    this._decorator.setDecoration(this._visibleLine, `${this._status}…`);
   }
 }

@@ -60,25 +60,14 @@ describe("InlineStripManager", () => {
   it("updateStatus() re-renders with the new status while visible", () => {
     const { manager, decorator } = makeManager();
     manager.show(5);
-    manager.updateStatus("listening");
-    assert.deepEqual(decorator.calls[1], { op: "set", line: 5, text: "listening…" });
+    manager.updateStatus("idle");
+    assert.deepEqual(decorator.calls[1], { op: "set", line: 5, text: "idle…" });
   });
 
   it("updateStatus() is a no-op when the strip is not visible", () => {
     const { manager, decorator } = makeManager();
-    manager.updateStatus("listening");
+    manager.updateStatus("idle");
     assert.deepEqual(decorator.calls, []);
-  });
-
-  it("updateTranscript() appends transcript text after the status", () => {
-    const { manager, decorator } = makeManager();
-    manager.show(5);
-    manager.updateTranscript("this loop retries on failure");
-    assert.deepEqual(decorator.calls[1], {
-      op: "set",
-      line: 5,
-      text: "explaining… this loop retries on failure",
-    });
   });
 
   it("dismiss() clears the decoration, resets the context key, and hides the strip", () => {
