@@ -20,13 +20,24 @@ from breakdown.rpc_handlers import (
 from breakdown.session import Session
 
 
+class FakeSpeechHandle:
+    def __init__(self) -> None:
+        self.id = "fake-speech-handle"
+        self.scheduled = True
+        self.interrupted = False
+
+    def add_done_callback(self, callback: object) -> None:
+        callback(self)  # type: ignore[operator]
+
+
 class FakeAgentSession:
     def __init__(self) -> None:
         self.said: list[str] = []
         self.closed = False
 
-    def say(self, text: str, allow_interruptions: bool = True) -> None:
+    def say(self, text: str, allow_interruptions: bool = True) -> FakeSpeechHandle:
         self.said.append(text)
+        return FakeSpeechHandle()
 
     async def aclose(self) -> None:
         self.closed = True

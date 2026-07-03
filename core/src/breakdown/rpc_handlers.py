@@ -29,7 +29,7 @@ class HandlerDeps:
     llm: object
 
 
-def build_system_prompt(session: Session, context_chunks: list[str], window: str) -> str:
+def build_system_prompt(session: Session, context_chunks: list[str], window: str) -> str:   
     ctx = "\n\n---\n\n".join(context_chunks) if context_chunks else "No additional context."
     return (
         "You are Breakdown, a voice-driven code explainer. "
@@ -85,6 +85,22 @@ async def _generate_text(llm_plugin: object, system: str, question: str) -> str:
     return str(response.text)
 
 
+def _narrate(agent_session: AgentSession, text: str) -> None:  # type: ignore[type-arg]
+    handle = agent_session.say(text, allow_interruptions=True)  # type: ignore[attr-defined]
+    logger.info(
+        "TTS say() started: id={} scheduled={} chars={}",
+        handle.id, handle.scheduled, len(text),
+    )
+
+    def _on_done(h: object) -> None:
+        logger.info(
+            "TTS say() finished: id={} interrupted={}",
+            handle.id, handle.interrupted,  # type: ignore[attr-defined]
+        )
+
+    handle.add_done_callback(_on_done)  # type: ignore[attr-defined]
+
+
 def _last_system_prompt(session: Session) -> str:
     for turn in reversed(session.history):
         if turn["role"] == "system":
@@ -121,7 +137,7 @@ async def handle_explain(payload: str, deps: HandlerDeps) -> str:
 
     deps.session.add_turn("assistant", text)
     deps.session.save(deps.session_path)
-    deps.agent_session.say(text, allow_interruptions=True)  # type: ignore[attr-defined]
+    _narrate(deps.agent_session, text)
 
     return json.dumps({"text": text, "file": file, "line": line})
 
@@ -141,7 +157,7 @@ async def handle_ask(payload: str, deps: HandlerDeps) -> str:
     answer = await _generate_text(deps.llm, system, text)
     deps.session.add_turn("assistant", answer)
     deps.session.save(deps.session_path)
-    deps.agent_session.say(answer, allow_interruptions=True)  # type: ignore[attr-defined]
+    _narrate(deps.agent_session, answer)
 
     return json.dumps({"text": answer})
 
