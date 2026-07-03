@@ -65,7 +65,7 @@ export class LiveKitRoom {
       (track, _pub, participant: RemoteParticipant) => {
         this._setAgentIdentity(participant.identity);
         if (track.kind === Track.Kind.Audio) {
-          this._player.attachTrack(track.mediaStreamTrack);
+          this._player.attachTrack(track);
         }
       },
     );
@@ -74,6 +74,25 @@ export class LiveKitRoom {
       this._send({ type: "disconnected", reason: String(reason) });
       this._player.stop();
     });
+
+    this._room.on(RoomEvent.AudioPlaybackStatusChanged, () => {
+      console.log("[breakdown] audio: canPlaybackAudio =", this._room.canPlaybackAudio);
+    });
+
+    // Browsers block autoplay of the attached <audio> element until a real
+    // user gesture occurs. Room.startAudio() is livekit-client's documented
+    // recovery path — it retries every element the SDK created via
+    // track.attach(), not just ones we happen to know about. Not one-shot:
+    // safe/cheap to call again on every gesture, and later tracks over the
+    // same connection need the same unlock.
+    const retryAudio = (): void => {
+      void this._room.startAudio().then(
+        () => console.log("[breakdown] audio: startAudio() ok, canPlaybackAudio =", this._room.canPlaybackAudio),
+        (err) => console.error("[breakdown] audio: startAudio() failed:", err),
+      );
+    };
+    document.addEventListener("pointerdown", retryAudio);
+    document.addEventListener("keydown", retryAudio);
 
     await this._room.connect(url, token);
 
