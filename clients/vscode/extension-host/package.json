@@ -3,11 +3,11 @@
   "displayName": "Breakdown",
   "description": "Voice-driven AI code explainer",
   "version": "0.1.0",
-  "publisher": "breakdown",
+  "publisher": "belaleatsbanana",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/breakdown/breakdown"
+    "url": "https://github.com/Belaleatsbanana/Breakdown"
   },
   "engines": { "vscode": "^1.85.0" },
   "categories": ["Other"],
