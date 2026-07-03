@@ -62,6 +62,9 @@ async def entrypoint(ctx: agents.JobContext) -> None:
 
         ctx.room.local_participant.register_rpc_method(method_name, _wrapped)  # type: ignore[attr-defined]
 
+    # local_participant is only available once the room connection is live.
+    await ctx.connect()  # type: ignore[attr-defined]
+
     _register("explain", handle_explain)
     _register("ask", handle_ask)
     _register("next", handle_next)
