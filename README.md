@@ -10,37 +10,44 @@ Interrupt at any time with a typed or spoken question.
 
 ## Quick Start
 
-**1. Install the Python core**
-
-```bash
-pip install breakdown-ai
-```
-
-**2. Install the VS Code extension**
+**1. Install the VS Code extension**
 
 Search for "Breakdown" in the VS Code Extensions panel, or install from the
-Marketplace page (link when published).
+[Marketplace](https://marketplace.visualstudio.com/items?itemName=belaleatsbanana.breakdown-vscode).
 
-**3. Set your API keys**
+**2. Run a session**
 
-Copy `.env.example` to `.env` in your project root and fill in your keys.
-Only `OPENAI_API_KEY` is required to get started.
+Open the Command Palette and run `Breakdown: Start Session` (or press
+`Cmd+K Cmd+E` on macOS / `Ctrl+K Ctrl+E` on Windows/Linux).
 
-**4. Start a session**
+The first time you do this, Breakdown will:
+- Prompt to install its Python core if it isn't found (`breakdown-ai`, via `uv` or `pip`)
+- Start a local LiveKit server automatically (requires Docker to be running)
+- Prompt you for one API key — OpenAI is enough to cover LLM, TTS, and embeddings
 
-Press `Cmd+K Cmd+E` (macOS) or `Ctrl+K Ctrl+E` (Windows/Linux) in any open file.
+Every subsequent `Start Session` skips straight to connecting, since the
+Python core, LiveKit, and your API key all persist.
+
+**3. Explain some code**
+
+Open a file, place your cursor on a line, and run `Breakdown: Explain Line`
+(`Cmd+Alt+I` / `Ctrl+Alt+I`). The explanation appears in the Breakdown sidebar
+and is narrated aloud.
 
 ## Keyboard Shortcuts
 
 | Action | macOS | Windows / Linux |
 |---|---|---|
-| Start session / explain line | Cmd+K Cmd+E | Ctrl+K Ctrl+E |
+| Start session | Cmd+K Cmd+E | Ctrl+K Ctrl+E |
+| Explain line | Cmd+Alt+I | Ctrl+Alt+I |
 | Next line | Cmd+K Cmd+N | Ctrl+K Ctrl+N |
 | Previous line | Cmd+K Cmd+P | Ctrl+K Ctrl+P |
-| Push to talk | Cmd+K Cmd+Space | Ctrl+K Ctrl+Space |
+| Ask a question | Cmd+K Cmd+Space | Ctrl+K Ctrl+Space |
 | Stop session | Cmd+K Cmd+Q | Ctrl+K Ctrl+Q |
 
-All shortcuts are configurable in VS Code's keyboard settings.
+All shortcuts are configurable in VS Code's keyboard settings. API keys are
+managed via `Breakdown: Set API Key` in the Command Palette, backed by VS
+Code's encrypted secret storage — no `.env` file needed.
 
 ## Providers
 

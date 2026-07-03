@@ -2,47 +2,36 @@
 
 ## Prerequisites
 
-- Python 3.11 or later
 - VS Code 1.85 or later
+- Docker (only if you don't have a LiveKit Cloud account) — Breakdown starts
+  it for you automatically, it just needs to already be running
 - An OpenAI API key (other providers are optional)
-- Docker (only if you do not have a LiveKit Cloud account)
-
-## Install the Python Core
-
-```bash
-pip install breakdown-ai
-```
-
-Or with uv:
-
-```bash
-uv tool install breakdown-ai
-```
 
 ## Install the VS Code Extension
 
 Search for "Breakdown" in the Extensions panel and click Install.
 
-## Configure API Keys
-
-Create a `.env` file in your project root:
-
-```bash
-cp .env.example .env
-```
-
-Open `.env` and add your `OPENAI_API_KEY`. All other keys are optional.
-
 ## Start a Session
 
-Open any code file in VS Code. Press `Cmd+K Cmd+E` (macOS) or
-`Ctrl+K Ctrl+E` (Windows/Linux).
+Open any code file in VS Code. Open the Command Palette and run
+`Breakdown: Start Session` (or press `Cmd+K Cmd+E` / `Ctrl+K Ctrl+E`).
 
-The extension will:
-1. Start the Breakdown Python process
-2. Start a local LiveKit server (if no `LIVEKIT_URL` is set)
-3. Index your codebase (first run only; subsequent runs are incremental)
-4. Open the audio panel and begin explaining the selected line
+The extension will, in order:
+1. Check whether the Python core (`breakdown-ai`) is installed. If not, it
+   offers to install it for you via `uv` or `pip` in an integrated terminal.
+2. Check whether Docker is running and start a local LiveKit server via
+   Docker Compose if needed.
+3. Check whether you've set an API key. If not, it prompts you — pick OpenAI
+   for the simplest setup (one key covers LLM, TTS, and embeddings).
+4. Start the Breakdown agent process and connect the sidebar.
+
+You only go through steps 1-3 once; later sessions skip straight to step 4.
+
+## Managing API Keys
+
+Run `Breakdown: Set API Key` from the Command Palette at any time to add or
+change a key. Keys are stored via VS Code's `SecretStorage` API (OS
+keychain-backed), never written to a plaintext file.
 
 ## First Index
 
@@ -54,11 +43,17 @@ Subsequent starts are fast because only changed files are re-indexed.
 
 ## Troubleshooting
 
-**"breakdown command not found"**
-Make sure the Python package is installed and on your PATH. With uv:
-```bash
-uv tool install breakdown-ai
-```
+**"Docker isn't running"**
+Install and start Docker Desktop (or Docker Engine), then run
+`Breakdown: Start Session` again. Alternatively, run `Breakdown: Set API Key`
+and set "LiveKit Cloud URL" (plus its matching API Key and API Secret) to
+point at a LiveKit Cloud project instead of self-hosting — once a LiveKit
+Cloud URL is set, `Start Session` skips the Docker step entirely.
+
+**"Breakdown: still can't find the `breakdown` command"**
+Check the "Breakdown Install" terminal for errors from the `pip`/`uv` install
+command. A common cause is the install completing into a directory that isn't
+on your shell's `PATH` — restart VS Code after adding it.
 
 **No audio**
 Check that your system audio output is working and not muted.
