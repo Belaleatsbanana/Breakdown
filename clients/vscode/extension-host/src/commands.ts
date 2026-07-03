@@ -81,14 +81,20 @@ export function registerCommands(
 
     vscode.commands.registerCommand("breakdown.explainLine", () => {
       const info = activeLineInfo();
-      if (!info) { return; }
+      console.log("[breakdown] explainLine: activeLineInfo =", info);
+      if (!info) {
+        console.warn("[breakdown] explainLine: no active text editor, aborting");
+        return;
+      }
       if (!chatView.isConnected()) {
+        console.warn("[breakdown] explainLine: chatView.isConnected() is false, aborting");
         vscode.window.showErrorMessage(
           "Breakdown: start a session first (Ctrl+K Ctrl+E / Cmd+K Cmd+E).",
         );
         return;
       }
       inlineStripManager.show(info.line);
+      console.log("[breakdown] explainLine: sending rpc message to webview", info);
       chatView.send({ type: "rpc", method: "explain", payload: info });
     }),
 

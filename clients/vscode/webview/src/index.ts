@@ -15,11 +15,14 @@ const chatView = new ChatView(container);
 bridge.send({ type: "ready" });
 
 bridge.onMessage(async (msg: HostToWebview) => {
+  console.log("[breakdown] webview received message from host:", msg.type, msg);
+
   if (msg.type === "connect") {
     room = new LiveKitRoom(bridge.send);
     try {
       await room.connect(msg.url, msg.token);
     } catch (err) {
+      console.error("[breakdown] room.connect() failed:", err);
       bridge.send({ type: "error", message: String(err) });
     }
     return;
@@ -33,12 +36,15 @@ bridge.onMessage(async (msg: HostToWebview) => {
 
   if (msg.type === "rpc") {
     if (!room) {
+      console.error("[breakdown] rpc requested but room is null (not connected yet)");
       bridge.send({ type: "error", message: "Breakdown: not connected." });
       return;
     }
+    console.log("[breakdown] calling performRpc:", msg.method, msg.payload);
     bridge.send({ type: "rpc_start", method: msg.method });
     try {
       const raw = await room.performRpc(msg.method, msg.payload);
+      console.log("[breakdown] performRpc resolved:", msg.method, raw);
       const data = JSON.parse(raw) as { text?: string; file?: string; line?: number };
       if (msg.method === "explain" && data.text !== undefined) {
         chatView.addExplainTurn(data.file ?? "", data.line ?? 0, data.text);
@@ -50,6 +56,7 @@ bridge.onMessage(async (msg: HostToWebview) => {
         bridge.send({ type: "position", file: data.file, line: data.line ?? 0 });
       }
     } catch (err) {
+      console.error("[breakdown] performRpc rejected:", msg.method, err);
       bridge.send({ type: "error", message: String(err) });
     } finally {
       bridge.send({ type: "rpc_end", method: msg.method });
