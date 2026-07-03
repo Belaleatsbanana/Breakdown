@@ -58,9 +58,20 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     body { font-family: var(--vscode-font-family); padding: 0 8px; }
     .turn { margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--vscode-panel-border); }
     .turn pre { background: var(--vscode-textCodeBlock-background); padding: 6px; overflow-x: auto; }
+    #audio-unlock {
+      margin: 8px 0;
+      padding: 8px 10px;
+      background: var(--vscode-inputValidation-infoBackground);
+      border: 1px solid var(--vscode-inputValidation-infoBorder);
+      border-radius: 4px;
+      cursor: pointer;
+      user-select: none;
+    }
+    #audio-unlock.hidden { display: none; }
   </style>
 </head>
 <body>
+<div id="audio-unlock">Click to enable narration audio</div>
 <div id="turns"></div>
 <script nonce="${nonce}" src="${webviewScriptUri}"></script>
 </body>

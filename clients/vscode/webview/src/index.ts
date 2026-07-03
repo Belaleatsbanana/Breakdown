@@ -12,6 +12,21 @@ if (!container) {
 }
 const chatView = new ChatView(container);
 
+// Browsers require a real user gesture inside this document before audio
+// can play. Registered once, independent of room reconnects, so the very
+// first click/keypress anywhere in the panel — including on the banner
+// below — unlocks audio for the rest of this document's lifetime and never
+// needs to happen again in this session.
+const audioUnlockBanner = document.getElementById("audio-unlock");
+const unlockAudio = (): void => {
+  audioUnlockBanner?.classList.add("hidden");
+  void room?.startAudio().catch((err) => {
+    console.error("[breakdown] audio: startAudio() failed:", err);
+  });
+};
+document.addEventListener("pointerdown", unlockAudio);
+document.addEventListener("keydown", unlockAudio);
+
 bridge.send({ type: "ready" });
 
 bridge.onMessage(async (msg: HostToWebview) => {
