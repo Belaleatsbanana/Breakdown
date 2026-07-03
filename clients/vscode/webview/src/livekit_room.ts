@@ -1,5 +1,5 @@
 // clients/vscode/webview/src/livekit_room.ts
-import { Room, RoomEvent, Track, RemoteParticipant } from "livekit-client";
+import { Room, RoomEvent, Track, RemoteParticipant, RpcError } from "livekit-client";
 import { AudioPlayer } from "./audio_player";
 import type { WebviewToHost } from "./message_bridge";
 
@@ -79,21 +79,6 @@ export class LiveKitRoom {
       console.log("[breakdown] audio: canPlaybackAudio =", this._room.canPlaybackAudio);
     });
 
-    // Browsers block autoplay of the attached <audio> element until a real
-    // user gesture occurs. Room.startAudio() is livekit-client's documented
-    // recovery path — it retries every element the SDK created via
-    // track.attach(), not just ones we happen to know about. Not one-shot:
-    // safe/cheap to call again on every gesture, and later tracks over the
-    // same connection need the same unlock.
-    const retryAudio = (): void => {
-      void this._room.startAudio().then(
-        () => console.log("[breakdown] audio: startAudio() ok, canPlaybackAudio =", this._room.canPlaybackAudio),
-        (err) => console.error("[breakdown] audio: startAudio() failed:", err),
-      );
-    };
-    document.addEventListener("pointerdown", retryAudio);
-    document.addEventListener("keydown", retryAudio);
-
     await this._room.connect(url, token);
 
     // Defensive: pick up a participant that joined before this client
@@ -106,17 +91,44 @@ export class LiveKitRoom {
     this._send({ type: "connected", participantId: this._room.localParticipant.sid });
   }
 
+  // Room.startAudio() is livekit-client's documented recovery path for
+  // browser-blocked autoplay — it retries every <audio> element the SDK
+  // created via track.attach(). Exposed here so a page-level gesture
+  // listener (registered once in index.ts, independent of reconnects) can
+  // call it against whichever room is currently active.
+  startAudio(): Promise<void> {
+    return this._room.startAudio();
+  }
+
   async performRpc(method: string, payload: object): Promise<string> {
     // Cold job dispatch (spawning the agent's worker process, opening its
     // vector index, joining the room) has been observed to take 25-30s
     // under load — 10s was too tight and failed real, successful startups.
     const identity = await this._waitForAgentIdentity(45000);
-    return this._room.localParticipant.performRpc({
+    const params = {
       destinationIdentity: identity,
       method,
       payload: JSON.stringify(payload),
       responseTimeout: 15000,
-    });
+    };
+    try {
+      return await this._room.localParticipant.performRpc(params);
+    } catch (err) {
+      // The very first RPC call right after connecting has been observed
+      // to time out because the reliable data channel is still finishing
+      // negotiation (concurrent with the agent's audio track attaching) —
+      // not a real failure. One retry consistently succeeds once the
+      // channel has settled; only retry that specific, transient case.
+      if (
+        err instanceof RpcError &&
+        (err.code === RpcError.ErrorCode.RESPONSE_TIMEOUT ||
+          err.code === RpcError.ErrorCode.CONNECTION_TIMEOUT)
+      ) {
+        console.warn("[breakdown] performRpc timed out, retrying once:", err);
+        return await this._room.localParticipant.performRpc(params);
+      }
+      throw err;
+    }
   }
 
   async disconnect(): Promise<void> {
