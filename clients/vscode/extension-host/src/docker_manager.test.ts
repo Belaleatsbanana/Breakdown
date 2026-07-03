@@ -3,17 +3,35 @@ import assert from "node:assert/strict";
 import { DockerManager } from "./docker_manager";
 
 describe("DockerManager", () => {
-  it("ensureRunning() throws an actionable error when docker info fails", async () => {
+  it("ensureRunning() throws an actionable error when docker info fails every retry", async () => {
+    let dockerInfoCalls = 0;
     const exec = async (command: string): Promise<void> => {
       if (command === "docker info") {
+        dockerInfoCalls += 1;
         throw new Error("docker: command not found");
       }
     };
-    const manager = new DockerManager(exec, async () => true);
+    const manager = new DockerManager(exec, async () => true, 30, 500, 2, 5);
     await assert.rejects(
       () => manager.ensureRunning("/fake/ext/path"),
       /Docker isn't running/,
     );
+    assert.equal(dockerInfoCalls, 2);
+  });
+
+  it("ensureRunning() succeeds if docker info recovers on a later retry", async () => {
+    let dockerInfoCalls = 0;
+    const exec = async (command: string): Promise<void> => {
+      if (command === "docker info") {
+        dockerInfoCalls += 1;
+        if (dockerInfoCalls < 2) {
+          throw new Error("transient failure");
+        }
+      }
+    };
+    const manager = new DockerManager(exec, async () => true, 30, 500, 3, 5);
+    await manager.ensureRunning("/fake/ext/path");
+    assert.equal(dockerInfoCalls, 2);
   });
 
   it("ensureRunning() runs docker compose up with the bundled compose file path", async () => {
