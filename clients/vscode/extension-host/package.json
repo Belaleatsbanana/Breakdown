@@ -21,7 +21,8 @@
       { "command": "breakdown.nextLine", "title": "Breakdown: Next Line" },
       { "command": "breakdown.prevLine", "title": "Breakdown: Previous Line" },
       { "command": "breakdown.askQuestion", "title": "Breakdown: Ask a Question" },
-      { "command": "breakdown.dismissInlineStrip", "title": "Breakdown: Dismiss Inline Strip" }
+      { "command": "breakdown.dismissInlineStrip", "title": "Breakdown: Dismiss Inline Strip" },
+      { "command": "breakdown.setApiKey", "title": "Breakdown: Set API Key" }
     ],
     "keybindings": [
       { "command": "breakdown.startSession", "key": "ctrl+k ctrl+e", "mac": "cmd+k cmd+e" },
