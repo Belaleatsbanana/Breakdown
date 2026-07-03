@@ -5,6 +5,8 @@ import { ChatViewProvider, VIEW_ID } from "./chat_view_provider";
 import { registerCommands } from "./commands";
 import { InlineStripManager } from "./inline_strip_manager";
 import { DecorationHostAdapter } from "./inline_strip_decorator";
+import { SecretsManager } from "./secrets_manager";
+import { DockerManager } from "./docker_manager";
 
 let _processManager: ProcessManager | null = null;
 let _chatViewProvider: ChatViewProvider | null = null;
@@ -31,10 +33,19 @@ export function activate(context: vscode.ExtensionContext): void {
 
   _processManager = new ProcessManager();
   _chatViewProvider = new ChatViewProvider(context, inlineStripManager);
+  const secretsManager = new SecretsManager(context.secrets);
+  const dockerManager = new DockerManager();
 
   const disposables = [
     vscode.window.registerWebviewViewProvider(VIEW_ID, _chatViewProvider),
-    ...registerCommands(context, _chatViewProvider, _processManager, inlineStripManager),
+    ...registerCommands(
+      context,
+      _chatViewProvider,
+      _processManager,
+      inlineStripManager,
+      secretsManager,
+      dockerManager,
+    ),
   ];
   context.subscriptions.push(...disposables, _chatViewProvider);
 }
