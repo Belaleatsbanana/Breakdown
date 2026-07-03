@@ -31,7 +31,17 @@
       { "command": "breakdown.askQuestion",   "key": "ctrl+k ctrl+space", "mac": "cmd+k cmd+space" },
       { "command": "breakdown.stopSession",  "key": "ctrl+k ctrl+q", "mac": "cmd+k cmd+q" },
       { "command": "breakdown.dismissInlineStrip", "key": "escape", "mac": "escape", "when": "breakdown.stripVisible" }
-    ]
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        { "id": "breakdown", "title": "Breakdown", "icon": "media/icon.svg" }
+      ]
+    },
+    "views": {
+      "breakdown": [
+        { "id": "breakdown.chatView", "name": "Breakdown", "type": "webview" }
+      ]
+    }
   },
   "scripts": {
     "build": "node esbuild.host.config.js",
