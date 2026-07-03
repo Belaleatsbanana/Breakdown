@@ -15,6 +15,7 @@ from breakdown.session import Session
 
 RPC_ERROR_PROVIDER_FAILURE = 2001
 RPC_ERROR_EMPTY_QUESTION = 2002
+RPC_ERROR_INVALID_PAYLOAD = 2003
 
 
 @dataclass
@@ -95,9 +96,13 @@ def _last_system_prompt(session: Session) -> str:
 
 
 async def handle_explain(payload: str, deps: HandlerDeps) -> str:
-    data: dict[str, object] = json.loads(payload)
-    file = str(data.get("file", ""))
-    line = int(data.get("line", 1))  # type: ignore[arg-type]
+    try:
+        data: dict[str, object] = json.loads(payload)
+        file = str(data.get("file", ""))
+        line = int(data.get("line", 1))  # type: ignore[arg-type]
+    except (json.JSONDecodeError, TypeError, ValueError) as exc:
+        raise RpcError(RPC_ERROR_INVALID_PAYLOAD, f"Invalid explain payload: {exc}") from None
+
     deps.session.current_file = file
     deps.session.current_line = line
 
@@ -122,8 +127,12 @@ async def handle_explain(payload: str, deps: HandlerDeps) -> str:
 
 
 async def handle_ask(payload: str, deps: HandlerDeps) -> str:
-    data: dict[str, object] = json.loads(payload)
-    text = str(data.get("text", ""))
+    try:
+        data: dict[str, object] = json.loads(payload)
+        text = str(data.get("text", ""))
+    except (json.JSONDecodeError, TypeError, ValueError) as exc:
+        raise RpcError(RPC_ERROR_INVALID_PAYLOAD, f"Invalid ask payload: {exc}") from None
+
     if not text:
         raise RpcError(RPC_ERROR_EMPTY_QUESTION, "Question text must not be empty")
 

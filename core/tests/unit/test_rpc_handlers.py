@@ -154,3 +154,19 @@ async def test_handle_ask_rejects_empty_text(tmp_path: Path) -> None:
 
     with pytest.raises(RpcError):
         await handle_ask(json.dumps({"text": ""}), deps)
+
+
+@patch("breakdown.rpc_handlers.index_context")
+async def test_handle_explain_raises_rpc_error_on_malformed_payload(mock_index_context, tmp_path: Path) -> None:
+    mock_index_context.return_value = ([], "")
+    deps = _make_deps(tmp_path)
+
+    with pytest.raises(RpcError):
+        await handle_explain(json.dumps({"file": "src/foo.py", "line": "not-a-number"}), deps)
+
+
+async def test_handle_ask_raises_rpc_error_on_malformed_json(tmp_path: Path) -> None:
+    deps = _make_deps(tmp_path)
+
+    with pytest.raises(RpcError):
+        await handle_ask("not valid json", deps)
