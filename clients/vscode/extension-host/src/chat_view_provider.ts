@@ -1,6 +1,7 @@
 // clients/vscode/extension-host/src/chat_view_provider.ts
 import * as vscode from "vscode";
 import * as path from "path";
+import { randomUUID } from "crypto";
 import type { HostToWebview, WebviewToHost } from "./message_types";
 import type { InlineStripManager } from "./inline_strip_manager";
 
@@ -38,7 +39,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
       vscode.Uri.file(path.join(this._context.extensionPath, "dist", "webview.js")),
     );
 
-    const nonce = getNonce();
+    const nonce = randomUUID();
     const csp = [
       `default-src 'none'`,
       `style-src 'unsafe-inline'`,
@@ -114,13 +115,4 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
   dispose(): void {
     this._statusBar.dispose();
   }
-}
-
-function getNonce(): string {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let result = "";
-  for (let i = 0; i < 32; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
 }
