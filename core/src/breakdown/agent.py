@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Awaitable, Callable
 from pathlib import Path
-from typing import Awaitable, Callable
 
 from livekit import agents  # type: ignore[import-untyped]
 from livekit.agents import Agent, AgentSession, RoomInputOptions  # type: ignore[import-untyped]

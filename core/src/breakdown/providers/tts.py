@@ -34,5 +34,6 @@ def create_tts(settings: Settings) -> object:
         )
 
     raise ValueError(
-        f"Unknown TTS provider: {settings.tts_provider!r}. Choose 'openai', 'elevenlabs', or 'deepgram'."
+        f"Unknown TTS provider: {settings.tts_provider!r}. "
+        "Choose 'openai', 'elevenlabs', or 'deepgram'."
     )

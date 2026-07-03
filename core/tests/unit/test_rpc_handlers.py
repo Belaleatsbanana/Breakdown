@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from livekit.rtc.rpc import RpcError  # type: ignore[import-untyped]
@@ -123,7 +123,9 @@ class FakeLLM:
 
 
 @patch("breakdown.rpc_handlers.index_context")
-async def test_handle_explain_returns_generated_text(mock_index_context, tmp_path: Path) -> None:
+async def test_handle_explain_returns_generated_text(
+    mock_index_context: MagicMock, tmp_path: Path
+) -> None:
     mock_index_context.return_value = ([], "42: def foo(): pass")
     deps = _make_deps(tmp_path)
     deps.llm = FakeLLM(text="This defines a no-op function.")
@@ -139,7 +141,9 @@ async def test_handle_explain_returns_generated_text(mock_index_context, tmp_pat
 
 
 @patch("breakdown.rpc_handlers.index_context")
-async def test_handle_explain_raises_rpc_error_on_llm_failure(mock_index_context, tmp_path: Path) -> None:
+async def test_handle_explain_raises_rpc_error_on_llm_failure(
+    mock_index_context: MagicMock, tmp_path: Path
+) -> None:
     mock_index_context.return_value = ([], "")
     deps = _make_deps(tmp_path)
     deps.llm = FakeLLM(fail=True)
@@ -168,7 +172,9 @@ async def test_handle_ask_rejects_empty_text(tmp_path: Path) -> None:
 
 
 @patch("breakdown.rpc_handlers.index_context")
-async def test_handle_explain_raises_rpc_error_on_malformed_payload(mock_index_context, tmp_path: Path) -> None:
+async def test_handle_explain_raises_rpc_error_on_malformed_payload(
+    mock_index_context: MagicMock, tmp_path: Path
+) -> None:
     mock_index_context.return_value = ([], "")
     deps = _make_deps(tmp_path)
 
