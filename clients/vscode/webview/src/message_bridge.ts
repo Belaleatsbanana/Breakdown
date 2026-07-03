@@ -2,7 +2,11 @@
 export type HostToWebview =
   | { type: "connect"; token: string; url: string; room: string }
   | { type: "disconnect" }
-  | { type: "send_data"; payload: object };
+  | {
+      type: "rpc";
+      method: "explain" | "ask" | "next" | "prev" | "stop";
+      payload: object;
+    };
 
 // Messages from webview -> extension host
 export type WebviewToHost =
@@ -10,8 +14,8 @@ export type WebviewToHost =
   | { type: "connected"; participantId: string }
   | { type: "disconnected"; reason: string }
   | { type: "error"; message: string }
-  | { type: "transcript"; text: string; final: boolean }
-  | { type: "status"; state: "idle" | "explaining" | "listening" | "interrupted" }
+  | { type: "rpc_start"; method: string }
+  | { type: "rpc_end"; method: string }
   | { type: "position"; file: string; line: number };
 
 declare function acquireVsCodeApi(): {
