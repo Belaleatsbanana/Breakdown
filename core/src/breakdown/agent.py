@@ -1,64 +1,30 @@
 from __future__ import annotations
 
-import asyncio
-import json
 import os
 from pathlib import Path
+from typing import Awaitable, Callable
 
 from livekit import agents  # type: ignore[import-untyped]
 from livekit.agents import Agent, AgentSession, RoomInputOptions  # type: ignore[import-untyped]
-from loguru import logger
+from livekit.rtc.rpc import RpcInvocationData  # type: ignore[import-untyped]
 
-from breakdown.config import Settings, get_settings
-from breakdown.indexer.store import VectorStore, create_store
+from breakdown.config import get_settings
+from breakdown.indexer.store import create_store
 from breakdown.providers.llm import create_llm
 from breakdown.providers.tts import create_tts
+from breakdown.rpc_handlers import (
+    HandlerDeps,
+    handle_ask,
+    handle_explain,
+    handle_next,
+    handle_prev,
+    handle_stop,
+)
 from breakdown.session import Session
 
-
-def _build_system_prompt(session: Session, context_chunks: list[str], window: str) -> str:
-    ctx = "\n\n---\n\n".join(context_chunks) if context_chunks else "No additional context."
-    return (
-        "You are Breakdown, a voice-driven code explainer. "
-        "Explain code clearly and concisely as if speaking to the developer who wrote it. "
-        "Be direct. Do not say 'certainly' or 'of course'. "
-        "When asked about a specific line, explain what it does and why it matters in context.\n\n"
-        f"Codebase context:\n{ctx}\n\n"
-        f"Current code window:\n{window}"
-    )
-
-
-async def _index_context(
-    store: VectorStore,
-    file: str,
-    line: int,
-    workspace_root: Path,
-    settings: Settings,
-) -> tuple[list[str], str]:
-    abs_path = workspace_root / file
-    try:
-        source_lines = abs_path.read_text(errors="replace").splitlines()
-    except OSError:
-        return [], ""
-
-    half = settings.context_window_lines // 2
-    start = max(0, line - 1 - half)
-    end = min(len(source_lines), line - 1 + half)
-    window = "\n".join(
-        f"{i + 1}: {src}" for i, src in enumerate(source_lines[start:end], start=start)
-    )
-
-    try:
-        from breakdown.indexer.embedder import create_embedder
-        embedder = create_embedder(settings.embedding_provider, settings)
-        query_emb = embedder.embed([source_lines[line - 1] if line <= len(source_lines) else ""])[0]
-        chunks = store.search(query_emb, k=5)
-        context = [c.text for c in chunks]
-    except Exception as exc:
-        logger.warning("Context retrieval failed: {}", exc)
-        context = []
-
-    return context, window
+# Bumped whenever the RPC method set or payload shapes change; see
+# docs/protocol.md for the full history.
+PROTOCOL_VERSION = 2
 
 
 # Module-level function so livekit-agents can pickle it for worker subprocesses.
@@ -77,64 +43,31 @@ async def entrypoint(ctx: agents.JobContext) -> None:
     tts = create_tts(settings)
     agent_session = AgentSession(llm=llm, tts=tts)  # type: ignore[arg-type]
 
-    async def _handle_data(packet: object) -> None:
-        try:
-            msg: dict[str, object] = json.loads(getattr(packet, "data", b"{}"))
-        except Exception:
-            return
+    deps = HandlerDeps(
+        session=session,
+        session_path=session_path,
+        store=store,
+        workspace_root=workspace_root,
+        settings=settings,
+        agent_session=agent_session,
+        llm=llm,
+    )
 
-        msg_type: str = str(msg.get("type", ""))
+    def _register(
+        method_name: str,
+        handler: Callable[[str, HandlerDeps], Awaitable[str]],
+    ) -> None:
+        async def _wrapped(data: RpcInvocationData) -> str:
+            return await handler(data.payload, deps)
 
-        if msg_type == "explain":
-            session.current_file = str(msg.get("file", ""))
-            session.current_line = int(msg.get("line", 1))  # type: ignore[arg-type]
-            context, window = await _index_context(
-                store, session.current_file, session.current_line, workspace_root, settings,
-            )
-            system = _build_system_prompt(session, context, window)
-            session.add_turn("system", system)
-            budget = int(settings.llm_context_window * settings.history_budget_pct)
-            session.trim_to_budget(budget)
-            mid = settings.context_window_lines // 2
-            window_lines = window.split("\n")
-            target_line = window_lines[mid] if window and mid < len(window_lines) else ""
-            await agent_session.say(  # type: ignore[attr-defined]
-                f"Line {session.current_line}: {target_line}", allow_interruptions=True,
-            )
-            session.add_turn("user", f"Explain line {session.current_line}: {target_line}")
-            session.save(session_path)
+        ctx.room.local_participant.register_rpc_method(method_name, _wrapped)  # type: ignore[attr-defined]
 
-        elif msg_type == "ask":
-            text = str(msg.get("text", ""))
-            if text:
-                session.add_turn("user", text)
-                await agent_session.generate_reply(user_input=text)  # type: ignore[attr-defined]
-                session.save(session_path)
+    _register("explain", handle_explain)
+    _register("ask", handle_ask)
+    _register("next", handle_next)
+    _register("prev", handle_prev)
+    _register("stop", handle_stop)
 
-        elif msg_type == "next":
-            session.current_line += 1
-            payload = json.dumps(
-                {"v": 1, "type": "position", "file": session.current_file, "line": session.current_line}  # noqa: E501
-            ).encode()
-            await ctx.room.local_participant.publish_data(payload)  # type: ignore[attr-defined]
-            session.save(session_path)
-
-        elif msg_type == "prev":
-            session.current_line = max(1, session.current_line - 1)
-            payload = json.dumps(
-                {"v": 1, "type": "position", "file": session.current_file, "line": session.current_line}  # noqa: E501
-            ).encode()
-            await ctx.room.local_participant.publish_data(payload)  # type: ignore[attr-defined]
-            session.save(session_path)
-
-        elif msg_type == "stop":
-            await agent_session.aclose()  # type: ignore[attr-defined]
-
-    # room.on() requires a sync callback; schedule the async work as a task.
-    def on_data(packet: object) -> None:
-        asyncio.create_task(_handle_data(packet))  # noqa: RUF006
-
-    ctx.room.on("data_received", on_data)  # type: ignore[attr-defined]
     await agent_session.start(  # type: ignore[attr-defined]
         agent=Agent(instructions="You are a helpful code explainer."),
         room=ctx.room,  # keyword-only in livekit-agents v1.6+
