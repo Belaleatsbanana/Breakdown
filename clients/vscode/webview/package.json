@@ -11,7 +11,7 @@
     "typescript": "^5.4.0"
   },
   "dependencies": {
-    "livekit-client": "^2.4.0",
+    "livekit-client": "^2.22.0",
     "marked": "^12.0.0"
   }
 }
